@@ -1,7 +1,8 @@
 version: "3.9"
 
 # ============================================================
-# APEX Trading Intelligence System — Full Stack
+# APEX Trading Intelligence System -- Full Stack
+# Services: TimescaleDB, Kafka, Zookeeper, Redis, FastAPI
 # ============================================================
 
 networks:
@@ -16,6 +17,9 @@ volumes:
 
 services:
 
+  # ----------------------------------------------------------
+  # TimescaleDB -- Time-series market data store
+  # ----------------------------------------------------------
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: apex-timescaledb
@@ -38,6 +42,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ----------------------------------------------------------
+  # Zookeeper -- Required by Kafka
+  # ----------------------------------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: apex-zookeeper
@@ -55,6 +62,11 @@ services:
       timeout: 5s
       retries: 5
 
+  # ----------------------------------------------------------
+  # Kafka -- Agent signal message bus
+  # Topics: market.ticks, agent.signals, decisions.output,
+  #         risk.alerts, execution.orders
+  # ----------------------------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: apex-kafka
@@ -84,6 +96,9 @@ services:
       timeout: 10s
       retries: 5
 
+  # ----------------------------------------------------------
+  # Kafka UI -- Topic monitoring and message inspection
+  # ----------------------------------------------------------
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: apex-kafka-ui
@@ -100,6 +115,9 @@ services:
     networks:
       - apex-net
 
+  # ----------------------------------------------------------
+  # Redis -- Hot cache for prices, signals, order book
+  # ----------------------------------------------------------
   redis:
     image: redis:7.2-alpine
     container_name: apex-redis
@@ -123,6 +141,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ----------------------------------------------------------
+  # APEX FastAPI App -- Control plane + Dashboard
+  # ----------------------------------------------------------
   apex-app:
     build:
       context: .
@@ -150,6 +171,9 @@ services:
       - apex-net
     command: uvicorn dashboard.app:app --host 0.0.0.0 --port 8080 --reload
 
+  # ----------------------------------------------------------
+  # APEX Agent Runner -- Runs all 20 agents
+  # ----------------------------------------------------------
   apex-agents:
     build:
       context: .
@@ -171,6 +195,9 @@ services:
       - apex-net
     command: python -m core.agent_runner
 
+  # ----------------------------------------------------------
+  # Grafana -- Optional metrics dashboard
+  # ----------------------------------------------------------
   grafana:
     image: grafana/grafana:10.4.0
     container_name: apex-grafana
