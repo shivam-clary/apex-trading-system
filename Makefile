@@ -1,5 +1,5 @@
 # ============================================================
-# APEX Trading Intelligence System -- Makefile
+# APEX Trading Intelligence System — Makefile
 # ============================================================
 
 .PHONY: help install infra-up infra-down db-init kafka-topics \
@@ -25,7 +25,7 @@ help:
 	@echo "  Trading:"
 	@echo "    make backtest       Run full backtesting suite (10yr NSE data)"
 	@echo "    make paper-trade    Start paper trading (no real money)"
-	@echo "    make live-trade     Start live trading (real money -- use with caution)"
+	@echo "    make live-trade     Start live trading (real money — use with caution)"
 	@echo "    make dashboard      Open monitoring dashboard"
 	@echo ""
 	@echo "  Development:"
