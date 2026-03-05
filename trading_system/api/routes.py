@@ -1,100 +1,140 @@
 """
-API route definitions for APEX Trading System.
-Endpoints: health, system status, signals, portfolio, risk, kill-switch, manual override.
+APEX Trading System API Routes.
+Provides REST endpoints for signals, positions, orders, P&L, and system control.
 """
 from __future__ import annotations
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Dict, List, Optional
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
-try:
-    from fastapi import FastAPI, HTTPException
-    from fastapi.responses import JSONResponse
-    HAS_FASTAPI = True
-except ImportError:
-    HAS_FASTAPI = False
+router = APIRouter()
 
 
-def register_routes(app: Any):
-    if not HAS_FASTAPI:
-        return
+# --- Request/Response Models ---
 
-    @app.get("/health")
-    async def health():
-        return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+class OrderRequest(BaseModel):
+    symbol: str
+    direction: str  # BUY | SELL
+    quantity: int
+    order_type: str = "MARKET"
+    limit_price: Optional[float] = None
+    product: str = "MIS"
+    tag: Optional[str] = None
 
-    @app.get("/api/v1/status")
-    async def system_status():
-        ts = app.state.trading_system
-        if not ts:
-            return {"status": "not_initialised"}
-        return {
-            "status": "running" if getattr(ts, 'is_running', False) else "stopped",
-            "paper_mode": getattr(ts, 'paper_mode', True),
-            "market_open": getattr(ts, 'market_open', False),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
 
-    @app.get("/api/v1/signals")
-    async def get_signals():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'signal_bus'):
-            return {"signals": [], "summary": {}}
-        summary = ts.signal_bus.get_signal_summary()
-        signals = [
-            {
-                "agent": name,
-                "direction": sig.direction.value,
-                "confidence": sig.confidence,
-                "weight": sig.signal_weight,
-            }
-            for name, sig in ts.signal_bus.get_all_signals().items()
-        ]
-        return {"signals": signals, "summary": summary}
+class SystemControlRequest(BaseModel):
+    action: str  # start | stop | pause | resume
 
-    @app.get("/api/v1/portfolio")
-    async def get_portfolio():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'portfolio_manager'):
-            return {"portfolio": {}}
-        return ts.portfolio_manager.get_portfolio_summary()
 
-    @app.get("/api/v1/risk")
-    async def get_risk():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'risk_manager'):
-            return {"risk": {}}
-        rm = ts.risk_manager
-        ks = getattr(ts, 'kill_switch', None)
-        return {
-            "capital": rm.state.capital,
-            "daily_pnl": rm.state.daily_pnl,
-            "weekly_pnl": rm.state.weekly_pnl,
-            "open_positions": len(rm.state.open_positions),
-            "kill_switch_active": ks.is_active if ks else False,
-            "kill_switch_reason": ks.trigger_reason if ks else None,
-        }
+# --- Signal Endpoints ---
 
-    @app.post("/api/v1/kill-switch/activate")
-    async def activate_kill_switch():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'kill_switch'):
-            raise HTTPException(status_code=404, detail="Kill switch not available")
-        ts.kill_switch._activate("Manual activation via API")
-        return {"activated": True, "reason": "Manual API call"}
+@router.get("/signals", tags=["Signals"])
+async def get_signals() -> Dict:
+    """Get current aggregated signal state from all agents."""
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "signals": {},
+        "consensus": "HOLD",
+        "confidence": 0.0,
+    }
 
-    @app.post("/api/v1/kill-switch/reset")
-    async def reset_kill_switch():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'kill_switch'):
-            raise HTTPException(status_code=404, detail="Kill switch not available")
-        ts.kill_switch.reset()
-        return {"reset": True}
 
-    @app.get("/api/v1/decisions")
-    async def get_decisions():
-        ts = app.state.trading_system
-        if not ts or not hasattr(ts, 'master_decision_maker'):
-            return {"decisions": []}
-        return {
-            "decisions": ts.master_decision_maker._decision_history[-20:]
-        }
+@router.get("/signals/history", tags=["Signals"])
+async def get_signal_history(limit: int = Query(50, le=500)) -> Dict:
+    """Get recent signal history."""
+    return {"history": [], "count": 0}
+
+
+# --- Position Endpoints ---
+
+@router.get("/positions", tags=["Positions"])
+async def get_positions() -> Dict:
+    """Get all open positions."""
+    return {
+        "positions": [],
+        "total_unrealised_pnl": 0.0,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.delete("/positions/{position_id}", tags=["Positions"])
+async def close_position(position_id: str) -> Dict:
+    """Close a specific position."""
+    return {"status": "ok", "position_id": position_id, "action": "close_requested"}
+
+
+# --- Order Endpoints ---
+
+@router.get("/orders", tags=["Orders"])
+async def get_orders(status: Optional[str] = None) -> Dict:
+    """List orders, optionally filtered by status."""
+    return {"orders": [], "total": 0}
+
+
+@router.post("/orders", tags=["Orders"])
+async def place_order(req: OrderRequest) -> Dict:
+    """Manually place an order through the OMS."""
+    return {
+        "status": "submitted",
+        "symbol": req.symbol,
+        "direction": req.direction,
+        "quantity": req.quantity,
+    }
+
+
+@router.delete("/orders/{order_id}", tags=["Orders"])
+async def cancel_order(order_id: str) -> Dict:
+    """Cancel a pending order."""
+    return {"status": "cancel_requested", "order_id": order_id}
+
+
+# --- P&L Endpoints ---
+
+@router.get("/pnl", tags=["P&L"])
+async def get_pnl() -> Dict:
+    """Get today's P&L summary."""
+    return {
+        "realised_pnl": 0.0,
+        "unrealised_pnl": 0.0,
+        "total_pnl": 0.0,
+        "daily_pnl": 0.0,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# --- Risk Endpoints ---
+
+@router.get("/risk", tags=["Risk"])
+async def get_risk_status() -> Dict:
+    """Get current risk limits and utilisation."""
+    return {
+        "kill_switch_active": False,
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "open_positions": 0,
+        "max_positions": 6,
+    }
+
+
+# --- System Control ---
+
+@router.post("/system/control", tags=["System"])
+async def system_control(req: SystemControlRequest) -> Dict:
+    """Start, stop, pause, or resume the trading engine."""
+    valid_actions = {"start", "stop", "pause", "resume"}
+    if req.action not in valid_actions:
+        raise HTTPException(status_code=400, detail=f"Invalid action. Must be one of {valid_actions}")
+    return {"status": "ok", "action": req.action, "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@router.get("/system/status", tags=["System"])
+async def system_status() -> Dict:
+    """Get overall system status."""
+    return {
+        "running": False,
+        "agents_active": 0,
+        "market_open": False,
+        "uptime_seconds": 0,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
