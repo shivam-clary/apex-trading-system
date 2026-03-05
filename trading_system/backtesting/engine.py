@@ -1,21 +1,23 @@
 """
-BacktestEngine — event-driven backtester for Indian equity F&O strategies.
-Applies realistic slippage, brokerage, and NSE trading rules.
+BacktestEngine — vectorised backtesting using pandas + numpy.
+Supports OHLCV replay, signal injection, slippage simulation, and multi-strategy comparison.
 """
 from __future__ import annotations
+import numpy as np
+import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
-import pandas as pd
+from ..risk.slippage_simulator import SlippageCostSimulator, BrokerageConfig
 
 
 @dataclass
 class BacktestConfig:
     initial_capital: float = 1_000_000.0
-    commission_per_trade: float = 20.0       # Zerodha flat Rs 20
-    stt_pct: float = 0.0001
-    slippage_bps: float = 2.0
-    lot_size: int = 50
+    commission_per_lot: float = 40.0   # Round-trip brokerage Rs
+    slippage_bps: float = 2.0          # Market impact bps
+    lot_size: int = 50                 # Nifty lot size
+    position_size_pct: float = 0.10    # 10% capital per trade
     max_positions: int = 3
     start_date: Optional[str] = None
     end_date: Optional[str] = None
@@ -23,110 +25,119 @@ class BacktestConfig:
 
 @dataclass
 class BacktestResult:
-    total_trades: int = 0
-    winning_trades: int = 0
-    losing_trades: int = 0
-    gross_pnl: float = 0.0
-    net_pnl: float = 0.0
-    total_costs: float = 0.0
+    total_return_pct: float = 0.0
+    cagr_pct: float = 0.0
     max_drawdown_pct: float = 0.0
     sharpe_ratio: float = 0.0
     sortino_ratio: float = 0.0
     calmar_ratio: float = 0.0
     win_rate_pct: float = 0.0
     profit_factor: float = 0.0
-    avg_win: float = 0.0
-    avg_loss: float = 0.0
+    total_trades: int = 0
+    avg_trade_return_pct: float = 0.0
+    avg_win_pct: float = 0.0
+    avg_loss_pct: float = 0.0
+    max_consecutive_wins: int = 0
+    max_consecutive_losses: int = 0
+    trades: List[Dict] = field(default_factory=list)
     equity_curve: List[float] = field(default_factory=list)
-    trade_log: List[Dict] = field(default_factory=list)
 
 
 class BacktestEngine:
-    """
-    Vectorised + event-driven hybrid backtester.
-    Accepts a strategy function that takes a bar and returns BUY/SELL/HOLD.
-    """
+    """Vectorised backtest engine for Indian equity F&O strategies."""
 
     def __init__(self, config: Optional[BacktestConfig] = None):
         self.config = config or BacktestConfig()
+        self.slippage = SlippageCostSimulator(
+            BrokerageConfig(market_impact_bps=config.slippage_bps if config else 2.0)
+        )
 
     def run(
         self,
-        data: pd.DataFrame,
-        strategy_fn: Callable[[pd.Series, Dict], str],
-        strategy_params: Optional[Dict] = None,
+        ohlcv: pd.DataFrame,
+        signal_fn: Callable[[pd.DataFrame, int], Optional[Dict]],
     ) -> BacktestResult:
         """
-        Run backtest over OHLCV data.
-        strategy_fn(bar, state) -> 'BUY' | 'SELL' | 'HOLD'
+        Run backtest.
+        signal_fn(df, idx) -> None | {"direction": "LONG"/"SHORT", "stop_loss": float, "target": float}
         """
-        params = strategy_params or {}
+        df = ohlcv.copy().reset_index(drop=True)
         capital = self.config.initial_capital
-        peak = capital
-        positions: List[Dict] = []
-        result = BacktestResult()
-        result.equity_curve.append(capital)
-        state: Dict[str, Any] = {"positions": positions, "params": params}
+        equity_curve = [capital]
+        trades = []
+        open_trade: Optional[Dict] = None
 
-        for idx, bar in data.iterrows():
-            signal = strategy_fn(bar, state)
-            cost = 0.0
+        for i in range(1, len(df)):
+            row = df.iloc[i]
+            close = row["close"]
+            high = row["high"]
+            low = row["low"]
 
-            if signal == "BUY" and len(positions) < self.config.max_positions:
-                entry = bar["close"] * (1 + self.config.slippage_bps / 10000)
-                qty = self.config.lot_size
-                cost = self._calc_cost(entry, qty)
-                positions.append({
-                    "entry": entry, "qty": qty,
-                    "entry_time": idx, "cost": cost,
-                })
-                capital -= cost
+            # Check exit on open trade
+            if open_trade:
+                exit_price = None
+                exit_reason = None
 
-            elif signal == "SELL" and positions:
-                pos = positions.pop(0)
-                exit_price = bar["close"] * (1 - self.config.slippage_bps / 10000)
-                gross = (exit_price - pos["entry"]) * pos["qty"]
-                exit_cost = self._calc_cost(exit_price, pos["qty"])
-                net = gross - pos["cost"] - exit_cost
-                capital += gross - exit_cost
-                result.total_trades += 1
-                result.gross_pnl += gross
-                result.total_costs += pos["cost"] + exit_cost
-                if net > 0:
-                    result.winning_trades += 1
-                    result.avg_win = (result.avg_win * (result.winning_trades - 1) + net) / result.winning_trades
+                if open_trade["direction"] == "LONG":
+                    if low <= open_trade["stop_loss"]:
+                        exit_price = open_trade["stop_loss"]
+                        exit_reason = "STOP"
+                    elif high >= open_trade["target"]:
+                        exit_price = open_trade["target"]
+                        exit_reason = "TARGET"
                 else:
-                    result.losing_trades += 1
-                    result.avg_loss = (result.avg_loss * (result.losing_trades - 1) + abs(net)) / result.losing_trades
-                result.trade_log.append({
-                    "entry_time": str(pos["entry_time"]), "exit_time": str(idx),
-                    "entry": pos["entry"], "exit": exit_price,
-                    "qty": pos["qty"], "pnl": net,
-                })
+                    if high >= open_trade["stop_loss"]:
+                        exit_price = open_trade["stop_loss"]
+                        exit_reason = "STOP"
+                    elif low <= open_trade["target"]:
+                        exit_price = open_trade["target"]
+                        exit_reason = "TARGET"
 
-            result.equity_curve.append(capital)
-            if capital > peak:
-                peak = capital
-            dd = (peak - capital) / peak * 100
-            if dd > result.max_drawdown_pct:
-                result.max_drawdown_pct = dd
+                if exit_price:
+                    qty = open_trade["quantity"]
+                    entry = open_trade["entry_price"]
+                    multiplier = 1 if open_trade["direction"] == "LONG" else -1
+                    gross_pnl = multiplier * (exit_price - entry) * qty
+                    cost = self.slippage.calculate_futures_cost(entry, qty, self.config.lot_size)
+                    net_pnl = gross_pnl - cost["total_cost"]
+                    capital += net_pnl
+                    trade_rec = {
+                        **open_trade,
+                        "exit_price": exit_price,
+                        "exit_reason": exit_reason,
+                        "exit_idx": i,
+                        "gross_pnl": gross_pnl,
+                        "net_pnl": net_pnl,
+                        "return_pct": net_pnl / (entry * qty) * 100,
+                    }
+                    trades.append(trade_rec)
+                    open_trade = None
 
-        result.net_pnl = capital - self.config.initial_capital
-        result.win_rate_pct = (
-            result.winning_trades / result.total_trades * 100
-            if result.total_trades else 0
-        )
-        result.profit_factor = (
-            (result.avg_win * result.winning_trades) /
-            (result.avg_loss * result.losing_trades)
-            if result.losing_trades and result.avg_loss else 0
-        )
-        return result
+            # Signal generation
+            if not open_trade:
+                signal = signal_fn(df, i)
+                if signal:
+                    position_capital = capital * self.config.position_size_pct
+                    qty = max(
+                        self.config.lot_size,
+                        int(position_capital / close / self.config.lot_size) * self.config.lot_size,
+                    )
+                    open_trade = {
+                        "direction": signal["direction"],
+                        "entry_price": close,
+                        "stop_loss": signal["stop_loss"],
+                        "target": signal["target"],
+                        "quantity": qty,
+                        "entry_idx": i,
+                        "entry_date": str(row.get("date", i)),
+                    }
 
-    def _calc_cost(self, price: float, qty: int) -> float:
-        notional = price * qty
-        return (
-            self.config.commission_per_trade +
-            notional * self.config.stt_pct +
-            notional * (self.config.slippage_bps / 10000)
-        )
+            equity_curve.append(capital)
+
+        return self._calculate_metrics(trades, equity_curve, self.config.initial_capital)
+
+    def _calculate_metrics(
+        self, trades: List[Dict], equity: List[float], initial_capital: float
+    ) -> BacktestResult:
+        from .metrics import PerformanceMetrics
+        return PerformanceMetrics.calculate(trades, equity, initial_capital)
