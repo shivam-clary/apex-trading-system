@@ -1,5 +1,5 @@
 """
-APEX Trading Intelligence System -- Main Entrypoint
+APEX Trading Intelligence System — Main Entrypoint
 Bootstraps all agents, infrastructure connections, signal bus, risk engine,
 and the FastAPI control plane. Run with:
 
@@ -50,7 +50,7 @@ app = create_app()
 
 
 class APEXOrchestrator:
-    """Top-level orchestrator -- wires all components and manages lifecycle."""
+    """Top-level orchestrator — wires all components and manages lifecycle."""
 
     def __init__(self):
         self.config = Config()
@@ -99,7 +99,7 @@ class APEXOrchestrator:
             SentimentPositioningAgent(config=self.config, signal_bus=self.signal_bus),
             ZeroDTEExpiryAgent(config=self.config, signal_bus=self.signal_bus),
         ]
-        log.info(f"APEXOrchestrator initialised -- {len(self.agents)} agents loaded")
+        log.info(f"APEXOrchestrator initialised — {len(self.agents)} agents loaded")
 
     async def start(self):
         self.running = True
@@ -112,7 +112,7 @@ class APEXOrchestrator:
             log.info(f"  Agent started: {agent.__class__.__name__}")
         self._tasks.append(asyncio.create_task(self.master_decision.run(), name="MasterDecisionMaker"))
         self._tasks.append(asyncio.create_task(self.kill_switch.monitor(), name="VolatilityKillSwitch"))
-        log.info(f"APEX running -- {len(self._tasks)} async tasks active")
+        log.info(f"APEX running — {len(self._tasks)} async tasks active")
         await asyncio.gather(*self._tasks, return_exceptions=True)
 
     async def stop(self):
