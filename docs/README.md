@@ -1,8 +1,8 @@
 # APEX Trading System
 
-**Autonomous Prediction & Execution System** — A fully autonomous AI-powered intraday options trading system for Indian markets (NSE/BSE), built on Nebula's multi-agent orchestration platform.
+**Autonomous Prediction & Execution System** — A fully autonomous AI-powered trading system covering Indian markets (NSE/BSE), crypto perpetuals, forex, and Polymarket prediction markets. Built on Nebula's multi-agent orchestration platform.
 
-> **Status:** Paper Trading (PAPER_MODE=true) | Sessions: 18 | Latest Win Rate: 100%
+> **Status:** Paper Trading (PAPER_MODE=true) | Sessions: 18 | Latest Win Rate: 100% | Markets: NSE/BSE live, Crypto/Forex/Polymarket in roadmap
 
 ---
 
@@ -15,8 +15,27 @@ APEX is a 24/7 autonomous trading system that:
 - Routes every signal through a mandatory risk veto gate before execution
 - Paper trades on NSE/BSE via Dhan API with realistic slippage simulation
 - Sends EOD performance reports by email every day at 15:35 IST
+- Trades Polymarket prediction markets when macro edge exceeds 5% mispricing
+- Roadmap: Crypto perpetuals (Bybit/Binance) and Forex (OANDA) modules in Phase 3-4
 
-No human intervention required. The system runs fully autonomously from 02:00 IST overnight through 15:35 IST market close.
+No human intervention required. The system runs fully autonomously from 02:00 IST overnight through 15:35 IST market close — and 24/7 on crypto and prediction markets.
+
+---
+
+## Multi-Market Coverage
+
+APEX is designed to trade across 4 asset classes using the same shared-memory architecture:
+
+| Market | Status | Broker/API | Hours |
+|--------|--------|-----------|-------|
+| NSE/BSE Options | **Live (Paper)** | Dhan API v2 | 09:15-15:30 IST |
+| Polymarket | **Agent exists** | CLOB API (Polygon) | 24/7 |
+| Crypto Perpetuals | Roadmap (Phase 3) | CCXT + Bybit/Binance | 24/7 |
+| Forex | Roadmap (Phase 4) | OANDA / Alpaca | Session-based |
+
+The same Risk Veto Authority gates every signal across all markets. One KILL_SWITCH halts everything.
+
+> See [MARKETS.md](./MARKETS.md) for full crypto, forex, and Polymarket expansion guide.
 
 ---
 
@@ -80,18 +99,18 @@ Every 5 min (09:15-15:30):
 All agents communicate via **Nebula shared memory** under the `APEX_TRADING` namespace. No direct agent-to-agent calls.
 
 ```
-GLOBAL_SENTIMENT        -> score [-1.0 to +1.0], label, directional_bias   (TTL: 4h)
-GLOBAL_SENTIMENT_USOPEN -> US open scan output                              (TTL: session)
-GLOBAL_SENTIMENT_ASIA   -> Asia scan output + composite                     (TTL: session)
-MARKET_STATE            -> regime, VIX, PCR, FII/DII, strategy_type        (TTL: 20min)
-OPTIONS_STATE           -> OI, IV rank, GEX walls, max pain, PCR            (TTL: 5min)
-SENTIMENT_STATE         -> NLP scores by sector                             (TTL: 10min)
-TRADE_SIGNAL            -> full leg spec, SL, target, confidence            (TTL: until executed)
-APPROVED_SIGNALS        -> veto-passed signals ready for execution          (TTL: until executed)
-EXECUTION_RECORD        -> fill prices, P&L, status                        (Permanent)
-PAPER_LEDGER            -> running positions, MTM                           (Live)
-DAILY_PNL               -> realized + unrealized, win/loss count            (Daily reset)
-KILL_SWITCH             -> active bool, reason, activated_by                (Manual reset)
+GLOBAL_SENTIMENT      -> score [-1.0 to +1.0], label, directional_bias   (TTL: 4h)
+GLOBAL_SENTIMENT_USOPEN -> US open scan output                            (TTL: session)
+GLOBAL_SENTIMENT_ASIA   -> Asia scan output + composite                   (TTL: session)
+MARKET_STATE          -> regime, VIX, PCR, FII/DII, strategy_type        (TTL: 20min)
+OPTIONS_STATE         -> OI, IV rank, GEX walls, max pain, PCR            (TTL: 5min)
+SENTIMENT_STATE       -> NLP scores by sector                             (TTL: 10min)
+TRADE_SIGNAL          -> full leg spec, SL, target, confidence            (TTL: until executed)
+APPROVED_SIGNALS      -> veto-passed signals ready for execution          (TTL: until executed)
+EXECUTION_RECORD      -> fill prices, P&L, status                        (Permanent)
+PAPER_LEDGER          -> running positions, MTM                           (Live)
+DAILY_PNL             -> realized + unrealized, win/loss count            (Daily reset)
+KILL_SWITCH           -> active bool, reason, activated_by                (Manual reset)
 ```
 
 ---
@@ -105,7 +124,7 @@ KILL_SWITCH             -> active bool, reason, activated_by                (Man
 5. Risk Veto checks KILL_SWITCH before any signal evaluation
 6. Max 3 concurrent open positions
 7. Only Central Command can reset KILL_SWITCH
-8. No naked options -- ever
+8. No naked options — ever
 9. Half-Kelly sizing on all positions
 10. Daily loss circuit breaker at -2% of capital
 
@@ -133,7 +152,65 @@ KILL_SWITCH             -> active bool, reason, activated_by                (Man
 
 ---
 
-## Performance (Paper -- Sessions 1-18)
+## Repository Structure
+
+```
+apex-trading-system/
+├── README.md                          <- This file
+├── docs/
+│   ├── SETUP.md                       <- NEW: Full setup guide (start here)
+│   ├── MARKETS.md                     <- NEW: Crypto, Forex, Polymarket expansion
+│   ├── APEX_ARCHITECTURE.md           <- Complete architecture + agent network
+│   ├── MEMORY_SCHEMA.md               <- All shared memory key schemas
+│   ├── RISK_FRAMEWORK.md              <- Risk rules, Kelly sizing, circuit breakers
+│   ├── india-trading-central-command.md
+│   ├── global-macro-intelligence-scanner.md
+│   ├── india-market-regime-engine.md
+│   ├── nse-option-chain-monitor.md
+│   ├── options-strategy-engine.md
+│   ├── trading-risk-veto-authority.md
+│   ├── dhan-paper-trade-engine.md
+│   └── dhan-live-order-executor.md
+└── tasks/                             <- Automation recipe TASK.md files
+    ├── apex-trading-system-daily-session-pipeline/TASK.md
+    ├── apex-15-min-regime-signal-loop/TASK.md
+    ├── apex-overnight-us-market-open-scan-2130-ist/TASK.md
+    └── apex-asiapre-europe-scan-0200-ist/TASK.md
+```
+
+---
+
+## Quickstart
+
+> **Full setup instructions:** [SETUP.md](./SETUP.md)
+> **Multi-market expansion (Crypto/Forex/Polymarket):** [MARKETS.md](./MARKETS.md)
+
+### 1. Prerequisites
+- Nebula account at [nebula.gg](https://nebula.gg)
+- Dhan API account with Client ID and Access Token
+- Indian API key for NSE option chain + historical data
+- (Optional) StockTwits Whisperer API for social sentiment
+
+### 2. Memory Initialization
+Set these keys in `APEX_TRADING` memory before first run:
+```
+KILL_SWITCH  = {"active": false, "reason": "", "set_by": "manual_init"}
+PAPER_LEDGER = {"cash_balance": 750000, "positions": [], "realized_pnl": 0}
+DAILY_PNL    = {"date": "YYYY-MM-DD", "realized": 0, "unrealized": 0, "net": 0}
+```
+
+### 3. Activate
+All 6 triggers are pre-configured and active. The system runs automatically.
+To switch to live trading: set `PAPER_MODE = false` in dhan-paper-trade-engine and trading-risk-veto-authority agent variables — but only after completing the [live trading checklist](./SETUP.md#8-going-live--checklist).
+
+### 4. Add More Markets
+- **Polymarket** (~30 min setup): See [MARKETS.md — Quick Start](./MARKETS.md#quick-start--polymarket-fastest-path-to-multi-market-30-min)
+- **Crypto** (Phase 3): Bybit/Binance via CCXT — see [MARKETS.md](./MARKETS.md#2-crypto-trading-module)
+- **Forex** (Phase 4): OANDA practice account — see [MARKETS.md](./MARKETS.md#3-forex-trading-module)
+
+---
+
+## Performance (Paper — Sessions 1-18)
 
 | Metric | Value |
 |---|---|
