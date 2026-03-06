@@ -25,7 +25,7 @@ log = logging.getLogger("apex.main")
 from trading_system.core.config import Config
 from trading_system.data.redis_client import RedisClient
 from trading_system.data.kafka_setup import KafkaManager
-from trading_system.data.kite_feed import KiteWebSocketFeed
+from trading_system.data.dhan_feed import DhanDataFeed
 from trading_system.signals.signal_bus import SignalBus
 from trading_system.signals.conflict_detector import ConflictDetector
 from trading_system.signals.master_decision_maker import MasterDecisionMaker
@@ -34,7 +34,7 @@ from trading_system.risk.risk_manager import RiskManager
 from trading_system.risk.volatility_kill_switch import VolatilityKillSwitch
 from trading_system.risk.portfolio_manager import PortfolioManager
 from trading_system.execution.order_manager import OrderManagementSystem
-from trading_system.execution.kite_executor import KiteExecutor
+from trading_system.execution.dhan_executor import DhanExecutor
 from trading_system.execution.smart_router import SmartOrderRouter
 from trading_system.agents import (
     IndianMarketDataAgent, GlobalMarketDataAgent, TechnicalAnalysisAgent,
@@ -73,75 +73,76 @@ class APEXOrchestrator:
         self.kill_switch = VolatilityKillSwitch(config=self.config)
         self.portfolio_manager = PortfolioManager(config=self.config)
 
-        self.kite_executor = KiteExecutor(config=self.config)
-        self.smart_router = SmartOrderRouter(executor=self.kite_executor)
-        self.oms = OrderManagementSystem(
-            router=self.smart_router,
-            risk_manager=self.risk_manager,
-            portfolio_manager=self.portfolio_manager,
+        # Dhan API executor and data feed
+        self.executor = DhanExecutor(
+            client_id=self.config.DHAN_CLIENT_ID,
+            access_token=self.config.DHAN_ACCESS_TOKEN,
+        )
+        self.oms = OrderManagementSystem(config=self.config)
+        self.router = SmartOrderRouter(executor=self.executor, oms=self.oms)
+
+        # Dhan market data feed
+        self.data_feed = DhanDataFeed(
+            client_id=self.config.DHAN_CLIENT_ID,
+            access_token=self.config.DHAN_ACCESS_TOKEN,
         )
 
         self.agents = [
-            IndianMarketDataAgent(config=self.config, signal_bus=self.signal_bus),
-            GlobalMarketDataAgent(config=self.config, signal_bus=self.signal_bus),
-            TechnicalAnalysisAgent(config=self.config, signal_bus=self.signal_bus),
+            IndianMarketDataAgent(config=self.config, redis=self.redis),
+            GlobalMarketDataAgent(config=self.config, redis=self.redis),
+            TechnicalAnalysisAgent(config=self.config, redis=self.redis),
             AlgoStrategyAgent(config=self.config, signal_bus=self.signal_bus),
             OptionsDerivativesAgent(config=self.config, signal_bus=self.signal_bus),
-            MarketRegimeAgent(config=self.config, signal_bus=self.signal_bus),
-            SGXPreMarketAgent(config=self.config, signal_bus=self.signal_bus),
-            CommoditiesAgent(config=self.config, signal_bus=self.signal_bus),
-            FundamentalAnalysisAgent(config=self.config, signal_bus=self.signal_bus),
-            FIIDIIFlowAgent(config=self.config, signal_bus=self.signal_bus),
-            RBIIndianMacroAgent(config=self.config, signal_bus=self.signal_bus),
-            GlobalMacroAgent(config=self.config, signal_bus=self.signal_bus),
-            IndianNewsEventsAgent(config=self.config, signal_bus=self.signal_bus),
-            GlobalNewsAgent(config=self.config, signal_bus=self.signal_bus),
+            MarketRegimeAgent(config=self.config, redis=self.redis),
+            SGXPreMarketAgent(config=self.config, redis=self.redis),
+            CommoditiesAgent(config=self.config, redis=self.redis),
+            FundamentalAnalysisAgent(config=self.config, redis=self.redis),
+            FIIDIIFlowAgent(config=self.config, redis=self.redis),
+            RBIIndianMacroAgent(config=self.config, redis=self.redis),
+            GlobalMacroAgent(config=self.config, redis=self.redis),
+            IndianNewsEventsAgent(config=self.config, redis=self.redis),
+            GlobalNewsAgent(config=self.config, redis=self.redis),
             SentimentPositioningAgent(config=self.config, signal_bus=self.signal_bus),
             ZeroDTEExpiryAgent(config=self.config, signal_bus=self.signal_bus),
         ]
-        log.info(f"APEXOrchestrator initialised — {len(self.agents)} agents loaded")
 
     async def start(self):
+        log.info("APEX Orchestrator starting up...")
         self.running = True
-        log.info("Starting APEX Trading Intelligence System...")
         await self.redis.connect()
-        await self.kafka.create_topics()
+        await self.kafka.connect()
+        await self.data_feed.connect()
         for agent in self.agents:
-            task = asyncio.create_task(agent.run(), name=agent.__class__.__name__)
+            task = asyncio.create_task(agent.run())
             self._tasks.append(task)
-            log.info(f"  Agent started: {agent.__class__.__name__}")
-        self._tasks.append(asyncio.create_task(self.master_decision.run(), name="MasterDecisionMaker"))
-        self._tasks.append(asyncio.create_task(self.kill_switch.monitor(), name="VolatilityKillSwitch"))
-        log.info(f"APEX running — {len(self._tasks)} async tasks active")
-        await asyncio.gather(*self._tasks, return_exceptions=True)
+        log.info(f"Started {len(self._tasks)} agents.")
+        await self.master_decision.run()
 
     async def stop(self):
-        log.info("Shutting down APEX...")
+        log.info("APEX Orchestrator shutting down...")
         self.running = False
         for task in self._tasks:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
+        await self.data_feed.disconnect()
         await self.redis.disconnect()
-        log.info("APEX shutdown complete.")
+        await self.kafka.disconnect()
+        log.info("Shutdown complete.")
 
 
-orchestrator: APEXOrchestrator | None = None
+orchestrator = APEXOrchestrator()
 
 
 @app.on_event("startup")
-async def on_startup():
-    global orchestrator
-    orchestrator = APEXOrchestrator()
+async def startup_event():
     asyncio.create_task(orchestrator.start())
-    log.info("APEX Orchestrator started via FastAPI startup hook")
 
 
 @app.on_event("shutdown")
-async def on_shutdown():
-    if orchestrator:
-        await orchestrator.stop()
+async def shutdown_event():
+    await orchestrator.stop()
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("trading_system.main:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
+    uvicorn.run("trading_system.main:app", host="0.0.0.0", port=8000, reload=False)
