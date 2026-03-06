@@ -1,208 +1,276 @@
 # APEX Trading Intelligence System
-### Renaissance-Grade Multi-Agent AI Trading System — Indian & Global Markets
+### Autonomous Multi-Agent AI Trading System — Indian Markets (NSE/BSE F&O)
 
 ---
 
 ## Overview
 
-APEX is an institutional-grade autonomous trading intelligence system built on a 20-agent AI network.
-It trades Indian markets (NSE/BSE — equities, F&O, indices) and global markets (US, crypto, commodities, forex)
-simultaneously, with every decision requiring multi-agent consensus and hard risk enforcement.
+APEX is an institutional-grade autonomous trading intelligence system built on a 16-agent AI network.
+It trades Indian markets (NSE/BSE — equities, F&O, indices) using multi-agent consensus, hard risk enforcement,
+and a fully Dhan API v2 native execution stack.
 
-Modeled after the internal architecture of Renaissance Technologies, Two Sigma, and D.E. Shaw.
+The system is designed for zero-human-intervention intraday and options trading, with a paper trading mode
+for strategy validation before going live.
 
 ---
 
-## System Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     APEX TRADING SYSTEM                         │
-├─────────────────────────────────────────────────────────────────┤
-│  LAYER 1: DATA INFRASTRUCTURE                                   │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐    │
-│  │ TimescaleDB  │ │    Kafka     │ │       Redis          │    │
-│  │ (tick store) │ │ (signal bus) │ │   (hot cache)        │    │
-│  └──────────────┘ └──────────────┘ └──────────────────────┘    │
-├─────────────────────────────────────────────────────────────────┤
-│  LAYER 2: AGENT NETWORK (20 Agents)                             │
-│                                                                 │
-│  Market Data (3)    Quant Engine (5)    Macro (4)               │
-│  ├ IndianMarket     ├ TechnicalAnalysis  ├ Fundamental          │
-│  ├ GlobalMarket     ├ AlgoStrategy       ├ FIIDIIFlow           │
-│  └ Commodities      ├ OptionsDerivs      ├ RBIIndianMacro       │
-│                     ├ MarketRegime*      └ GlobalMacro           │
-│                     └ SGXPreMarket*                              │
-│                                                                 │
-│  Sentiment (3)      Risk & Portfolio (4)                        │
-│  ├ IndianNews       ├ RiskManagement (VETO)                     │
-│  ├ GlobalNews       ├ VolatilityKillSwitch*                     │
-│  └ Sentiment        ├ PortfolioManager                          │
-│                     └ SlippageCostSim*                          │
-│                                                                 │
-│  Expiry (1)*        (* = NEW agents from research)             │
-│  └ ZeroDTEExpiry                                                │
-├─────────────────────────────────────────────────────────────────┤
-│  LAYER 3: THE BRAIN                                             │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  InterAgentSignalBus  →  ConflictDetector               │   │
-│  │       ↓                                                 │   │
-│  │  MasterDecisionMaker  →  LearningEngine                 │   │
-│  └─────────────────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────────────────┤
-│  LAYER 4: EXECUTION                                             │
-│  ┌──────────────────┐  ┌─────────────────┐  ┌──────────────┐  │
-│  │  Backtesting     │  │  Order Mgmt     │  │  Broker API  │  │
-│  │  (VectorBT +     │  │  System (OMS)   │  │  (Zerodha    │  │
-│  │   NautilusTrader)│  │  VWAP/TWAP      │  │   Kite)      │  │
-│  └──────────────────┘  └─────────────────┘  └──────────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│  LAYER 5: CONTROL PLANE                                         │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────┐  │
-│  │  FastAPI        │  │  Dashboard       │  │  Alerts      │  │
-│  │  REST + WS      │  │  (HTML/JS)       │  │  (WA/SMS)    │  │
-│  └─────────────────┘  └──────────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+DhanDataFeed (WebSocket)
+    |
+    v
+SignalBus (Redis pub/sub)
+    |
+    +-----> 16 Specialist Agents (run concurrently)
+    |
+    v
+MasterDecisionMaker (consensus + conflict resolution)
+    |
+    v
+RiskManager + VolatilityKillSwitch (hard veto)
+    |
+    v
+SmartOrderRouter
+    |
+    v
+DhanExecutor --> Dhan API v2
 ```
 
 ---
 
-## What This System Trades
+## Agent Network (16 Agents)
 
-| Asset Class        | Instruments                                              |
-|--------------------|----------------------------------------------------------|
-| Indian Indices     | Nifty 50, Bank Nifty, Finnifty, Midcap Nifty, Sensex F&O |
-| Indian Stocks      | 1200+ NSE/BSE stocks — intraday, positional, delivery    |
-| Indian Commodities | Gold, Crude (MCX), Agri futures (NCDEX)                 |
-| Global Signals     | S&P 500, NASDAQ, Nikkei, SGX Nifty (macro signals)      |
-| Forex              | USD/INR, DXY (hedging + macro signal)                   |
-| Crypto             | BTC/ETH (risk-on/off sentiment signal)                  |
-
----
-
-## Core Principles
-
-1. **No single-agent decisions** — minimum 3-agent consensus required for any trade
-2. **Risk Agent has absolute VETO** — no position breaches risk limits, ever
-3. **Full reasoning chain** — Decision Maker shows complete logic, not a black box
-4. **Regime-aware** — strategies switch based on trending/ranging/high-vol detection
-5. **India-specific intelligence** — FII/DII flows, RBI policy, SGX Nifty, F&O expiry dynamics
-6. **Global macro chain** — Fed → DXY → FII → INR → RBI → India market fully modeled
-7. **Self-improving** — Decision Maker reweights agents based on historical win rate
+| Agent | Role |
+|-------|------|
+| IndianMarketDataAgent | NSE/BSE live prices and market data |
+| GlobalMarketDataAgent | US markets, global indices |
+| CommoditiesAgent | MCX commodities (crude, gold, silver) |
+| TechnicalAnalysisAgent | TA indicators (RSI, MACD, Bollinger, etc.) |
+| AlgoStrategyAgent | Algorithmic signal generation |
+| OptionsDerivativesAgent | F&O analysis, Greeks, IV |
+| MarketRegimeAgent | Trending/ranging/volatile regime detection |
+| SGXPreMarketAgent | SGX Nifty pre-market gap analysis |
+| FundamentalAnalysisAgent | Earnings, valuations, sector rotation |
+| FIIDIIFlowAgent | FII/DII institutional flow tracking |
+| RBIIndianMacroAgent | RBI policy, India macro indicators |
+| GlobalMacroAgent | Fed, DXY, yields, global macro signals |
+| IndianNewsEventsAgent | NSE/BSE announcements, India news |
+| GlobalNewsAgent | Reuters, Bloomberg, global event scanning |
+| SentimentPositioningAgent | Options PCR, market sentiment, positioning |
+| ZeroDTEExpiryAgent | 0-DTE expiry strategy execution |
 
 ---
 
-## Directory Structure
+## Infrastructure Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Market Data Feed | Dhan API v2 WebSocket (`dhanhq.marketfeed`) |
+| Order Execution | Dhan API v2 REST (`dhanhq.dhanhq`) |
+| State / Pub-Sub | Redis |
+| Event Streaming | Kafka |
+| Control Plane API | FastAPI (port 8000) |
+| Language | Python 3.10+ |
+
+---
+
+## Repository Structure
 
 ```
 trading_system/
-├── agents/                 # All 20 agent implementations
-│   ├── layer1_market_data/ # Indian, Global, Commodities, SGX agents
-│   ├── layer2_quant/       # Technical, Algo, Options, Regime agents
-│   ├── layer3_fundamental/ # Fundamental, FII/DII, RBI, GlobalMacro agents
-│   ├── layer4_sentiment/   # News, Sentiment, ZeroDTE agents
-│   ├── layer5_risk/        # Risk, VIX KillSwitch, Portfolio, Slippage agents
-│   └── layer6_brain/       # SignalBus, ConflictDetector, DecisionMaker, Learner
-├── core/                   # Shared models, config, base classes
-│   ├── signal_schema.py    # Standardized agent signal format
-│   ├── config.py           # System-wide configuration
-│   ├── base_agent.py       # Base class all agents inherit
-│   └── constants.py        # NSE symbols, expiry calendars, thresholds
-├── data/                   # Data infrastructure
-│   ├── schema.sql          # TimescaleDB schema
-│   ├── kafka_config.py     # Kafka topics and producer/consumer setup
-│   ├── redis_config.py     # Redis cache configuration
-│   └── connectors/         # Zerodha, Upstox, YFinance, global data connectors
-├── execution/              # Order management and broker integration
-│   ├── oms.py              # Order Management System
-│   ├── kite_broker.py      # Zerodha Kite API integration
-│   ├── smart_router.py     # VWAP/TWAP smart order routing
-│   └── pre_trade_risk.py   # Pre-trade risk validation
-├── risk/                   # Hard risk enforcement (separate from Risk Agent)
-│   ├── circuit_breaker.py  # Hard stops — cannot be overridden
-│   ├── var_engine.py       # VaR/CVaR calculation engine
-│   ├── stress_test.py      # Scenario stress testing
-│   └── margin_monitor.py   # Real-time margin monitoring
-├── backtesting/            # Strategy validation engine
-│   ├── vectorbt_engine.py  # Fast vectorized backtesting
-│   ├── nautilus_engine.py  # Production-parity event-driven backtesting
-│   ├── walk_forward.py     # Walk-forward validation
-│   ├── monte_carlo.py      # Monte Carlo simulation (10,000 scenarios)
-│   └── metrics.py          # Sharpe, MaxDD, WinRate, ProfitFactor
-├── dashboard/              # Monitoring and control UI
-│   ├── app.py              # FastAPI application
-│   ├── routes/             # REST API routes
-│   ├── websocket.py        # Real-time signal streaming
-│   ├── static/             # HTML/CSS/JS dashboard
-│   └── alerts.py           # WhatsApp/SMS/email alerting
-├── infrastructure/         # Deployment and operations
-│   ├── docker-compose.yml  # Full stack orchestration
-│   ├── kafka/              # Kafka + Zookeeper config
-│   ├── timescaledb/        # DB init scripts
-│   └── redis/              # Redis config
-├── requirements.txt        # Python dependencies
-├── .env.example            # Environment variables template
-├── Makefile                # Build, run, test commands
-└── README.md               # This file
+  agents/                    # 16 specialist trading agents
+    algo_strategy.py
+    commodities.py
+    fii_dii_flow.py
+    fundamental_analysis.py
+    global_macro.py
+    global_market_data.py
+    global_news.py
+    indian_market_data.py
+    indian_news_events.py
+    market_regime.py
+    options_derivatives.py
+    rbi_macro.py
+    sentiment_positioning.py
+    sgx_pre_market.py
+    technical_analysis.py
+    zero_dte_expiry.py
+  core/
+    config.py                # APEXConfig dataclass -- env-var driven
+  data/
+    redis_client.py          # Redis async client
+    kafka_setup.py           # Kafka producer/consumer
+    dhan_feed.py             # Dhan WebSocket market data feed
+  signals/
+    signal_bus.py            # Redis-backed async pub/sub
+    conflict_detector.py     # Agent signal conflict resolution
+    master_decision_maker.py # Consensus engine
+    learning_engine.py       # Strategy performance feedback loop
+  risk/
+    risk_manager.py          # Position and daily loss limits
+    volatility_kill_switch.py# Hard veto on extreme volatility
+    portfolio_manager.py     # Portfolio-level position tracking
+  execution/
+    order_manager.py         # Order lifecycle management (OMS)
+    dhan_executor.py         # Dhan API v2 order execution engine
+    smart_router.py          # Smart order routing (limit/market)
+  api/
+    server.py                # FastAPI control plane
+  main.py                    # APEXOrchestrator entrypoint
+docs/
+infrastructure/
+tasks/
 ```
 
 ---
 
 ## Quick Start
 
+### 1. Install dependencies
+
 ```bash
-# 1. Clone and configure
-cp .env.example .env
-# Fill in your API keys in .env
+pip install dhanhq redis kafka-python fastapi uvicorn
+```
 
-# 2. Start infrastructure
-make infra-up
+### 2. Set environment variables
 
-# 3. Initialize database
-make db-init
+```bash
+# Dhan API (required)
+export DHAN_CLIENT_ID="your_client_id"
+export DHAN_ACCESS_TOKEN="your_access_token"
 
-# 4. Run backtesting validation
-make backtest
+# Redis (defaults to localhost:6379)
+export REDIS_HOST="localhost"
+export REDIS_PORT="6379"
+export REDIS_DB="0"
 
-# 5. Start paper trading (no real money)
-make paper-trade
+# Kafka (defaults to localhost:9092)
+export KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
 
-# 6. Start live trading (real money — ensure backtest passed)
-make live-trade
+# Risk limits
+export MAX_DAILY_LOSS="50000"          # INR -- hard daily loss circuit breaker
+export MAX_OPEN_POSITIONS="5"
+export MAX_POSITION_SIZE="100000"      # INR per position
+export VOLATILITY_THRESHOLD="2.0"
 
-# 7. Open dashboard
-open http://localhost:8080
+# Trading mode: paper (default) or live
+export TRADING_MODE="paper"
+export DEFAULT_EXCHANGE="NSE_FNO"
+
+# LLM APIs (for agent intelligence)
+export OPENAI_API_KEY="your_key"
+export ANTHROPIC_API_KEY="your_key"
+export GEMINI_API_KEY="your_key"
+
+# News
+export NEWS_API_KEY="your_key"
+```
+
+### 3. Run the system
+
+```bash
+uvicorn trading_system.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Or directly:
+
+```bash
+python -m trading_system.main
 ```
 
 ---
 
-## Tech Stack
+## Risk Management
 
-| Component         | Technology                                    |
-|-------------------|-----------------------------------------------|
-| Agent Framework   | AutoGen v0.4 (Microsoft)                      |
-| Backtesting       | VectorBT (research) + Nautilus Trader (prod)  |
-| Time-Series DB    | TimescaleDB (PostgreSQL extension)            |
-| Signal Bus        | Apache Kafka + Zookeeper                      |
-| Hot Cache         | Redis                                         |
-| API Framework     | FastAPI + Uvicorn                             |
-| Indian Data       | Zerodha Kite API (primary), Upstox (fallback) |
-| Global Data       | Yahoo Finance, Alpha Vantage, Polygon.io      |
-| Technical Library | pandas-ta, TA-Lib, scipy                      |
-| ML/AI             | scikit-learn, XGBoost, PyTorch (regime ML)    |
-| Containerization  | Docker + Docker Compose                       |
-| Monitoring        | Prometheus + Grafana (optional)               |
+APEX enforces hard risk limits that cannot be overridden by any agent:
+
+| Parameter | Default | Env Var |
+|-----------|---------|--------|
+| Max Daily Loss | INR 50,000 | `MAX_DAILY_LOSS` |
+| Max Open Positions | 5 | `MAX_OPEN_POSITIONS` |
+| Max Position Size | INR 1,00,000 | `MAX_POSITION_SIZE` |
+| Volatility Kill Switch | 2.0x threshold | `VOLATILITY_THRESHOLD` |
+
+The `VolatilityKillSwitch` and `RiskManager` both have veto authority over the `MasterDecisionMaker`.
+No order reaches `DhanExecutor` without passing both checks.
 
 ---
 
-## Risk Warnings
+## Trading Modes
 
-- This system is for educational and research purposes
-- Paper trade extensively before any live deployment
-- Never risk capital you cannot afford to lose
-- Indian markets have specific SEBI regulations — ensure compliance
-- Past backtest performance does not guarantee future results
+| Mode | Behavior |
+|------|----------|
+| `paper` (default) | Simulates order fills using live prices. No real orders sent. |
+| `live` | Places real orders via Dhan API v2. Use only after paper validation. |
+
+Switch via: `export TRADING_MODE=live`
 
 ---
 
-*Built by APEX Quant Systems — Inspired by Renaissance Technologies, Two Sigma, D.E. Shaw*
+## Execution Engine
+
+**Broker:** DhanHQ -- Dhan API v2 only. No Zerodha/Kite/Upstox dependencies.
+
+**DhanExecutor** supports:
+- `place_order` -- market, limit, SL, SL-M order types
+- `modify_order` -- update price/quantity on open orders
+- `cancel_order` -- cancel by order ID
+- `get_positions` -- current intraday positions
+- `get_holdings` -- delivery holdings
+- `get_funds` -- available margin
+
+**DhanDataFeed** supports:
+- WebSocket streaming (Ticker / Quote / Full depth modes)
+- `subscribe(security_id, exchange_segment, mode)` -- single instrument
+- `subscribe_many(instruments, mode)` -- batch subscribe
+- `on_tick(callback)` -- register tick handlers
+- Auto-reconnect with subscription restoration
+
+**Exchange segments:** `NSE_EQ`, `NSE_FNO`, `BSE_EQ`, `BSE_FNO`, `MCX_COMM`
+
+---
+
+## Configuration
+
+All configuration is driven by environment variables via `APEXConfig` (dataclass in `core/config.py`).
+No hardcoded secrets. Import pattern:
+
+```python
+from trading_system.core.config import Config
+config = Config()
+print(config.DHAN_CLIENT_ID)
+```
+
+---
+
+## Nebula AI Integration
+
+APEX is orchestrated by the Nebula AI agent network, which runs:
+- **Morning pre-market briefing** (09:00 IST) -- regime scan, global macro, sentiment
+- **15-minute intraday loops** -- regime refresh, signal generation, paper trade execution
+- **Post-session learning** -- reviews trades, updates strategy weights, files GitHub issues for detected bugs
+
+The Nebula agent ecosystem (India Trading Central Command + 8 specialist agents) operates independently
+of this codebase but uses Dhan API credentials and Redis state shared with the trading system.
+
+---
+
+## Development Status
+
+| Component | Status |
+|-----------|--------|
+| Dhan API v2 integration | Complete |
+| 16-agent network | Complete |
+| Paper trading engine | Active |
+| Live trading | Ready (disabled by default) |
+| Risk enforcement | Complete |
+| FastAPI control plane | Complete |
+| Kafka event streaming | Integrated |
+| Redis state management | Integrated |
+
+---
+
+## License
+
+Private repository. All rights reserved.
