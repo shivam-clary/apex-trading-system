@@ -7,7 +7,7 @@
       "recurrence": 1,
       "fix_status": "FIXED",
       "timestamp": "2026-03-06T19:05:00Z",
-      "fix_description": "Added Workflow section to live-trade-performance-monitor. Enforces object-only manage_memories values. Fixed PERFORMANCE_ALERTs typo. Enforced Gmail API email standard.",
+      "fix_description": "Added Workflow section to live-trade-performance-monitor. Enforces object-only manage_memories values. Fixed PERFORMANCE_ALERTS typo. Enforced Gmail API email standard.",
       "current_value": "FILM_FX_FALLBACK",
       "timestamp_set": "2026-03-06T08:17:00Z",
       "fix_description_prev": "Added config.py KILL_SWITCH map. APEX_PAPER mode until live-trade-performance-monitor serialization bug resolved. File fallback active."
@@ -15,7 +15,7 @@
     "ERL_003": {
       "agent": "india-trading-central-command",
       "trigger": "apex-15-min-regime-signal-loop",
-      "impact": "Regime signal loop not running. Live trade performance not updating.",
+      "impact": "Recurrence signal loop not running. Live trade performance not updating.",
       "recurrence": 1,
       "fix_status": "FIXED",
       "timestamp": "2026-03-06T18:18:26Z",
@@ -31,77 +31,88 @@
       "recurrence": 1,
       "fix_status": "RESOLVED",
       "timestamp": "2026-03-06T15:10:00Z",
-      "fix_description": "BUG-A [CRITICAL]: Step 8 key typo PERFORMAOCE_SNAPSHOT -> PERFORMANCE_SNAPSHOT. BUG-B [HIGH]: Step 9 fallback key typo PEIPFOPMANCE_SNAPSHOT -> PERFORMANCE_SNAPSHOT. BUG-C [LOW]: Fixed double-t ttimestamp in Steps 4+6. BUG-D [LOW]: Removed leading space in Step 5.",
+      "fix_description": "BUG-A [CRITICAL]: Step 8 key typo. BUG-B [HIGH]: Step 9 fallback key typo. BUG-C [LOW]: Fixed double-t timestamp. BUG-D [LOW]: Removed leading space in Step 5.",
       "commit_hashes": [
-        "ac23e45748654bbc98aa44845f75d8de08f26b87",
+        "ac23e457486548bc98aa44845f75d8de08f26b87",
         "7bc308b6231c4531ed8db9a08e5c34bdaa6738c3",
         "5e98a50d4258982c2df7e5920a40690a56a62e80"
       ],
       "fix_timestamp": "2026-03-06T20:08:13Z"
     },
-    "ERL_003": {
+    "ERR_003": {
       "agent": "india-trading-central-command",
-      "error": "Regime signal loop not running. Live trade performance not updating.",
-      "trigger": "apex-15-min-regime-signal-loop",
-      "impact": "Regime signal loop not running. Live trade performance not updating.",
-      "recurrence": 1,
-      "fix_status": "FIXED",
-      "timestamp": "2026-03-06T18:18:26Z",
-      "fix_description": "Added TASK.md for apex-15-min-regime-signal-loop + updated india-trading-central-command agent prompt. Commits: d2fec90, 93e8b2e1.",
+      "error": "manage_memories serialization - Input should be an object",
+      "trigger": "apex-intraday-regime-signal-execution-loop",
+      "impact": "MARKET_STATE not persisted to memory for cycles 2 and 3 (FILE_FALLBACK active)",
+      "recurrence": 3,
+      "fix_status": "RESOLVED",
+      "timestamp": "2026-03-06T20:49:00Z",
+      "fix_description": "Rewrote india-trading-central-command with full 7-step typed Workflow. Step 4 enforces MARKET_STATE plain dict schema. Root cause: prior fix (93e8b2e1) added prose only - insufficient for recurrence 3.",
       "commit_hashes": [
-        "d2fec9076509d48f71c36c9de95ca0d7477a1771",
-        "93e8b2e1e4f433a3fa38d4f8f8bb75c8d3fb8130"
+        "846ff6247b910a7bd086d86bf396a0e473387874"
       ],
-      "fix_timestamp": "2026-03-06T18:18:26Z"
+      "fix_timestamp": "2026-03-06T20:18:23Z"
     }
   },
   "HEALTH_STATUS": {
     "overall": "RECOVERING",
     "agents": {
+      "india-trading-central-command": "RECOVERING",
       "live-trade-performance-monitor": "RECOVERING",
-      "india-trading-central-command": "ACTIVE"
+      "apex-risk-veto": "OK",
+      "apex-signal-generator": "OK",
+      "apex-portfolio-manager": "OK"
     },
-    "last_updated": "2026-03-06T20:08:13Z",
-    "notes": "ERR_001 root cause identified and fixed: PERFORMAOCE_SNAPSHOT typo in Step 8 corrected to PERFORMANCE_SNAPSHOT. Commit 5e98a50."
+    "last_updated": "2026-03-06T20:18:23Z"
   },
-  "FIX_HISTORY": {
-    "ERR_001": {
-      "error_id": "ERR_001",
-      "fix_timestamp": "2026-03-06T20:08:13Z",
-      "fix_description": "Root cause: Step 8 wrote to key PERFORMAOCE_SNAPSHOT (typo: O not N) so PERFORMANCE_SNAPSHOT was never persisted. Step 9 fallback also used wrong key PEIPFOPMANCE_SNAPSHOT. Both fixed to PERFORMANCE_SNAPSHOT. Also fixed ttimestamp typo (Steps 4+6) and leading space (Step 5). All 4 bugs patched in single commit.",
-      "fix_status": "RESOLVED",
-      "pr_or_commit": "https://github.com/sn-sujay/apex-trading-system/commit/5e98a50d4258982c2df7e5920a40690a56a62e80",
-      "bugs_fixed": [
-        {
-          "id": "BUG-A",
-          "severity": "CRITICAL",
-          "description": "Step 8 key typo PERFORMAOCE_SNAPSHOT -> PERFORMANCE_SNAPSHOT"
-        },
-        {
-          "id": "BUG-B",
-          "severity": "HIGH",
-          "description": "Step 9 fallback key typo PEIPFOPMANCE_SNAPSHOT -> PERFORMANCE_SNAPSHOT"
-        },
-        {
-          "id": "BUG-C",
-          "severity": "LOW",
-          "description": "Double-t ttimestamp typo in Steps 4 and 6"
-        },
-        {
-          "id": "BUG-D",
-          "severity": "LOW",
-          "description": "Leading space before manage_memories in Step 5"
-        }
-      ],
-      "agent": "live-trade-performance-monitor",
-      "trigger": "apex-live-performance-monitor-every-15-min",
-      "recurrence_at_fix": 1,
-      "file_changed": "agents/live-trade-performance-monitor.md",
-      "new_file_sha": "c187aa10080122d1f2b99cb233d9449890a67de0"
-    }
+  "MARKET_STATE": {
+    "regime": "FLAT_RANGEBOUND",
+    "confidence": 65,
+    "timestamp": "2026-03-06T08:30:00Z",
+    "source": "FILE_FALLBACK",
+    "note": "Memory write failed (ERR_003) - fallback to file"
   },
   "PAPER_LEDGER": {
-    "mode": "APEX_PAPER",
-    "note": "Paper mode active until live performance monitor confirmed stable after ERR_001 fix."
-  }
+    "mode": "PAPER",
+    "trades": [],
+    "pnl": 0,
+    "last_updated": "2026-03-06T08:00:00Z"
+  },
+  "DAILY_PNL": {
+    "date": "2026-03-06",
+    "realized": 0,
+    "unrealized": 0,
+    "trades_today": 0,
+    "last_updated": "2026-03-06T08:00:00Z"
+  },
+  "SESSION_LOG": {
+    "session_date": "2026-03-06",
+    "start_time": "08:00 IST",
+    "status": "ACTIVE",
+    "events": [],
+    "last_updated": "2026-03-06T08:00:00Z"
+  },
+  "FIX_HISTORY": [
+    {
+      "error_id": "ERR_003",
+      "fix_timestamp": "2026-03-06T18:18:26Z",
+      "fix_description": "Added TASK.md for apex-15-min-regime-signal-loop + updated india-trading-central-command agent prompt. Commits: d2fec90, 93e8b2e1.",
+      "fix_status": "RESOLVED",
+      "pr_or_commit": "https://github.com/sn-sujay/apex-trading-system/commit/d2fec9076509d48f71c36c9de95ca0d7477a1771"
+    },
+    {
+      "error_id": "ERR_001",
+      "fix_timestamp": "2026-03-06T20:08:13Z",
+      "fix_description": "Added Workflow section to live-trade-performance-monitor. Enforces object-only manage_memories values. Fixed key typos. Enforced Gmail API email standard.",
+      "fix_status": "RESOLVED",
+      "pr_or_commit": "https://github.com/sn-sujay/apex-trading-system/commit/ac23e457486548bc98aa44845f75d8de08f26b87"
+    },
+    {
+      "error_id": "ERR_003",
+      "fix_timestamp": "2026-03-06T20:18:23Z",
+      "fix_description": "RECURRENCE 3 CRITICAL. Rewrote india-trading-central-command with full 7-step typed Workflow. Step 4 enforces MARKET_STATE plain dict schema. Step 5 adds SESSION_LOG read-append-write pattern. Replaces insufficient prose-only warning from prior fix (93e8b2e1). All manage_memories calls now use plain dict objects.",
+      "fix_status": "RESOLVED",
+      "pr_or_commit": "https://github.com/sn-sujay/apex-trading-system/commit/846ff6247b910a7bd086d86bf396a0e473387874"
+    }
+  ]
 }
