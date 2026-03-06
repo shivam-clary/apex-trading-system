@@ -51,6 +51,98 @@ WRONG (causes ERR_001 serialization error):
 Apply same rule to all other keys: LIVE_PNL, LIVE_METRICS, DRAWDOWN_STATUS,
 DECAY_STATUS, PERFORMANCE_ALERTS.
 
+## Workflow
+Execute the following steps every 5 minutes during market hours (09:15-15:30 IST):
+
+### Step 1 — Read inputs
+Read from memory: EXECUTION_LOG, PAPER_LEDGER, MARKET_REGIME (plain object reads).
+
+### Step 2 — Compute metrics
+Calculate the following as Python float/int/bool values (NOT strings):
+- session_pnl: float (sum of closed trade PnL this session)
+- sharpe: float (rolling intraday Sharpe ratio)
+- calmar: float (session return / max drawdown)
+- sortino: float (downside-deviation adjusted return)
+- win_rate: float (0.0-1.0, wins / total trades)
+- profit_factor: float (gross profit / gross loss)
+- drawdown_pct: float (current drawdown as % of capital)
+- decay_detected: bool (True if current metrics < 20-session baseline by threshold)
+- open_positions: int (count of currently open positions)
+
+### Step 3 — Write LIVE_PNL to memory
+manage_memories(action="save", key="LIVE_PNL", value={
+  "timestamp": "<ISO8601 string>",
+  "session_pnl": <float>,
+  "by_strategy": {
+    "<strategy_name>": <float>
+  }
+})
+
+### Step 4 — Write LIVE_METRICS to memory
+manage_memories(action="save", key="LIVE_METRICS", value={
+  "timestamp": "<ISO8601 string>",
+  "sharpe": <float>,
+  "calmar": <float>,
+  "sortino": <float>,
+  "win_rate": <float>,
+  "profit_factor": <float>
+})
+
+### Step 5 — Write DRAWDOWN_STATUS to memory
+manage_memories(action="save", key="DRAWDOWN_STATUS", value={
+  "timestamp": "<ISO8601 string>",
+  "drawdown_pct": <float>,
+  "warning_threshold": 1.5,
+  "circuit_breaker_threshold": 2.0,
+  "status": "<string: OK | WARNING | CIRCUIT_BREAKER>"
+})
+
+### Step 6 — Write DECAY_STATUS to memory
+manage_memories(action="save", key="DECAY_STATUS", value={
+  "timestamp": "<ISO8601 string>",
+  "decay_detected": <bool>,
+  "current_sharpe": <float>,
+  "baseline_sharpe_20s": <float>,
+  "decay_pct": <float>
+})
+
+### Step 7 — Write PERFORMANCE_ALERTS to memory
+manage_memories(action="save", key="PERFORMANCE_ALERTS", value={
+  "timestamp": "<ISO8601 string>",
+  "active_alerts": [
+    {"alert_type": "<string>", "triggered_at": "<ISO8601>", "detail": "<string>"}
+  ],
+  "alert_count": <int>
+})
+
+### Step 8 — Write PERFORMANCE_SNAPSHOT to memory
+manage_memories(action="save", key="PERFORMANCE_SNAPSHOT", value={
+  "timestamp": "<ISO8601 string>",
+  "session_pnl": <float>,
+  "sharpe": <float>,
+  "calmar": <float>,
+  "sortino": <float>,
+  "win_rate": <float>,
+  "profit_factor": <float>,
+  "drawdown_pct": <float>,
+  "decay_detected": <bool>,
+  "open_positions": <int>,
+  "market_regime": "<string>",
+  "alert_count": <int>
+})
+
+### Step 9 — Alert routing (conditional)
+IF drawdown_pct >= 1.5 OR decay_detected == true:
+  Send alert email via Gmail API (account: apn_EOhpM3G) to sujaysn6@gmail.com.
+  Post to apex-live-trading Nebula channel.
+  Forward metrics to trading-risk-veto-authority memory key.
+
+## Email Standard
+ALL outbound emails from this agent MUST use Gmail API (account: apn_EOhpM3G, sujaysn6@gmail.com).
+AWS SES, SMTP, and boto3 are permanently decommissioned system-wide. Never reference them.
+Do NOT use any SMTP library, boto3.client("ses"), or direct TCP email sending.
+Use only: run_action(action_key="gmail-send-email", account_id="apn_EOhpM3G", ...)
+
 ## Triggers
 - Updates every 5 minutes during market hours
 - Immediate alert trigger when daily loss exceeds 1.5% (warning) or 2% (circuit breaker)
@@ -59,5 +151,5 @@ DECAY_STATUS, PERFORMANCE_ALERTS.
 ## Integration
 - Reads from: `EXECUTION_LOG`, `PAPER_LEDGER`, `MARKET_REGIME`
 - Feeds data to: `trading-risk-veto-authority`, `apex-self-evolution-engine`
-- Output channels: email to sujaysn6@gmail.com, apex-live-trading Nebula channel
+- Output channels: email via Gmail API (apn_EOhpM3G) to sujaysn6@gmail.com, apex-live-trading Nebula channel
 - Part of: APEX Trading System
