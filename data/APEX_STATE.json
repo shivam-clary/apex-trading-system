@@ -53,19 +53,21 @@
         "a0519370711aa46c54bbb4f598439a78733ed1da"
       ],
       "fix_commit": "a0519370711aa46c54bbb4f598439a78733ed1da",
-      "fix_timestamp": "2026-03-06T21:10:37Z"
+      "fix_timestamp": "2026-03-06T21:10:37Z",
+      "fix_verified_at": "2026-03-07T00:01:00Z",
+      "fix_verified_by": "apex-validator"
     }
   },
   "HEALTH_STATUS": {
     "overall": "RECOVERING",
     "agents": {
-      "india-trading-central-command": "RECOVERING",
+      "india-trading-central-command": "VERIFIED",
       "live-trade-performance-monitor": "HEALTHY",
       "signal-generator": "HEALTHY",
       "risk-veto": "HEALTHY",
       "dhan-executor": "HEALTHY"
     },
-    "last_updated": "2026-03-06T21:10:37Z"
+    "last_updated": "2026-03-07T00:01:00Z"
   },
   "FIX_HISTORY": [
     {
@@ -93,7 +95,11 @@
       "timestamp": "2026-03-06T21:10:37Z",
       "commit": "a0519370711aa46c54bbb4f598439a78733ed1da",
       "description": "Full clean rewrite: fixed binary corruption in Steps 1/2/5, fixed DAILY_PNL typo, restored Steps 6/7, clean Memory Key Schemas table, updated Serialization Guard Rule. All 9 content checks pass.",
-      "status": "APPLIED"
+      "status": "VERIFIED",
+      "verified_at": "2026-03-07T00:01:00Z",
+      "verified_by": "apex-validator",
+      "verification_checks": "15/15",
+      "recurrences_since_fix": 0
     }
   ]
 }
