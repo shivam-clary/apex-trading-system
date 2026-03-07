@@ -15,13 +15,25 @@ logger = logging.getLogger("apex.redis")
 class RedisClient:
     """Async Redis client wrapper for APEX system"""
 
-    def __init__(self, redis_url: str = "redis://localhost:6379/0"):
+    def __init__(
+        self,
+        redis_url: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 6379,
+        db: int = 0
+    ):
         """
         Initialize Redis client
 
         Args:
-            redis_url: Redis connection URL
+            redis_url: Redis connection URL (optional)
+            host: Redis host (default: localhost)
+            port: Redis port (default: 6379)
+            db: Redis database (default: 0)
         """
+        if not redis_url:
+            redis_url = f"redis://{host}:{port}/{db}"
+
         self.redis_url = redis_url
         self.pool = ConnectionPool.from_url(redis_url, decode_responses=False)
         self.client = Redis(connection_pool=self.pool)
@@ -31,6 +43,10 @@ class RedisClient:
         """Close Redis connection"""
         await self.client.close()
         await self.pool.disconnect()
+
+    async def setex(self, name, time, value):
+        """Proxy setex to underlying Redis client"""
+        return await self.client.setex(name, time, value)
 
     # ===== PRICE CACHE =====
     async def set_price(self, symbol: str, price: float, ttl: int = 5) -> bool:

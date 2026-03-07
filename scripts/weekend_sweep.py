@@ -29,7 +29,13 @@ import time
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
+
+
+
+if TYPE_CHECKING:
+    from typing import Any
+
 
 try:
     import feedparser

@@ -47,7 +47,8 @@ class PortfolioManagementAgent:
     MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in one sector
     MAX_SINGLE_POSITION_SIZE = 0.25  # Max 25% in one trade
 
-    def __init__(self, initial_capital: float = 1_000_000.0):
+    def __init__(self, initial_capital: float = 1_000_000.0, **kwargs):
+        self.redis = kwargs.get("redis_client")
         self.capital = initial_capital
         self.positions: Dict[str, Position] = {}
         self.closed_trades: List[Dict] = []
@@ -121,3 +122,6 @@ class PortfolioManagementAgent:
         if (sector_notional + new_notional) / total > self.MAX_SECTOR_CONCENTRATION:
             return False, f"Sector concentration limit reached for {new_pos.sector}"
         return True, ""
+
+
+PortfolioManager = PortfolioManagementAgent

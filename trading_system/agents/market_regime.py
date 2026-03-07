@@ -47,20 +47,20 @@ class MarketRegimeAgent(APEXBaseAgent):
 
         # SMA200 position
         sma200 = close.rolling(200).mean()
-        above_sma200 = float(close.iloc[-1]) > float(sma200.iloc[-1]) if not sma200.empty else True
+        above_sma200 = float(close.to_numpy()[-1]) > float(sma200.to_numpy()[-1]) if not sma200.empty else True
 
         # 20-day realized volatility (annualized)
         returns = close.pct_change().dropna()
-        vol_20d = float(returns.tail(20).std() * np.sqrt(252) * 100) if len(returns) >= 20 else 15.0
+        vol_20d = float(returns.to_numpy()[-20:].std() * np.sqrt(252) * 100) if len(returns) >= 20 else 15.0
 
         # 60-day trend return
-        trend_return = float((close.iloc[-1] / close.iloc[-61] - 1) * 100) if len(close) > 61 else 0.0
+        trend_return = float((close.to_numpy()[-1] / close.to_numpy()[-61] - 1) * 100) if len(close) > 61 else 0.0
 
         # VIX
         india_vix = 15.0
         if vix_df is not None and not vix_df.empty:
             vc = vix_df["Close"] if "Close" in vix_df.columns else vix_df["close"]
-            india_vix = float(vc.iloc[-1])
+            india_vix = float(vc.to_numpy()[-1])
 
         # Regime classification
         factors = []
@@ -113,7 +113,7 @@ class MarketRegimeAgent(APEXBaseAgent):
         india_vix = None
         if data.get("vix") is not None and not data["vix"].empty:
             vc = data["vix"]["Close"] if "Close" in data["vix"].columns else data["vix"]["close"]
-            india_vix = float(vc.iloc[-1])
+            india_vix = float(vc.to_numpy()[-1])
 
         return self._make_signal(
             direction=direction,

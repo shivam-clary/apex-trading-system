@@ -19,7 +19,8 @@ class LearningEngine:
     MIN_WEIGHT = 0.01
     MAX_WEIGHT = 0.25
 
-    def __init__(self):
+    def __init__(self, redis_client=None):
+        self.redis = redis_client
         self._agent_stats: Dict[str, Dict] = defaultdict(lambda: {
             "correct": 0, "incorrect": 0, "total": 0,
             "dynamic_weight_adj": 0.0,

@@ -39,7 +39,8 @@ class RiskManagementAgent:
     before being forwarded to the execution layer.
     """
 
-    def __init__(self, limits: Optional[RiskLimits] = None):
+    def __init__(self, limits: Optional[RiskLimits] = None, **kwargs):
+        self.config = kwargs.get("config")
         self.limits = limits or RiskLimits()
         self.state = PortfolioState()
 
@@ -142,3 +143,6 @@ class RiskManagementAgent:
             self.state.daily_pnl = 0.0
             self.state.daily_trades = 0
             self.state.last_reset_date = today
+
+
+RiskManager = RiskManagementAgent

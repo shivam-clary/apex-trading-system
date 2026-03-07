@@ -4,23 +4,21 @@ Ingests real-time NSE/BSE data via Zerodha Kite WebSocket.
 Produces signals based on price action, volume, breadth, and market internals.
 """
 from __future__ import annotations
-import asyncio
 import logging
-from datetime import datetime, time as dtime
-from typing import Dict, Any, Optional, List
+from datetime import datetime
+from typing import Dict, Any, Optional
 
-import httpx
+
 import pandas as pd
 import numpy as np
 
 from ..core.base_agent import APEXBaseAgent
 from ..core.signal_schema import (
     AgentSignal, SignalDirection, SignalTimeframe,
-    AssetClass, MarketRegime
+    AssetClass
 )
 from ..core.constants import (
-    NSE_OPEN_TIME, NSE_CLOSE_TIME, NIFTY50_SYMBOL,
-    BANKNIFTY_SYMBOL, TIMEFRAME_5M, TIMEFRAME_15M
+    NIFTY50_SYMBOL, TIMEFRAME_5M
 )
 
 logger = logging.getLogger(__name__)

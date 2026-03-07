@@ -1,1 +1,160 @@
-"""\ndhan_executor.py -- Dhan API v2 Order Execution Engine\n\nReplaces kite_executor.py. Handles order placement, modification,\ncancellation, position and holdings management via the DhanHQ API v2.\n"""\n\nimport logging\nfrom typing import Any, Dict, List, Optional\n\nfrom dhanhq import dhanhq\n\nlogger = logging.getLogger(__name__)\n\n\nclass DhanExecutor:\n    """Order execution engine backed by DhanHQ API v2.\n\n    Exchange segment constants (dhanhq v2):\n        NSE_EQ, NSE_FNO, BSE_EQ, BSE_FNO, MCX_COMM\n\n    Transaction type constants (dhanhq v2):\n        BUY, SELL\n    """\n\n    # Exchange segment constants\n    NSE_EQ = "NSE_EQ"\n    NSE_FNO = "NSE_FNO"\n    BSE_EQ = "BSE_EQ"\n    BSE_FNO = "BSE_FNO"\n    MCX_COMM = "MCX_COMM"\n\n    # Transaction type constants\n    BUY = "BUY"\n    SELL = "SELL"\n\n    def __init__(self, client_id: str, access_token: str) -> None:\n        """Initialise the DhanHQ client.\n\n        Args:\n            client_id:    Your Dhan client / user ID.\n            access_token: Dhan API access token.\n        """\n        self.dhan = dhanhq(client_id, access_token)\n        self.logger = logging.getLogger(self.__class__.__name__)\n        self.logger.info("DhanExecutor initialised for client_id=%s", client_id)\n\n    # ------------------------------------------------------------------\n    # Order management\n    # ------------------------------------------------------------------\n\n    def place_order(self, order: dict) -> dict:\n        """Place an order via DhanHQ API v2.\n\n        Args:\n            order: Dict with keys:\n                - security_id       (str)  : Dhan security identifier\n                - exchange_segment  (str)  : e.g. NSE_EQ, NSE_FNO\n                - transaction_type  (str)  : BUY | SELL\n                - quantity          (int)  : number of shares/lots\n                - order_type        (str)  : LIMIT | MARKET | SL | SL-M\n                - product_type      (str)  : INTRADAY | MARGIN | CNC | CO | BO\n                - price             (float): limit price (0 for MARKET)\n                - trigger_price     (float): stop-loss trigger (0 if N/A)\n\n        Returns:\n            dict: API response containing order_id on success.\n        """\n        try:\n            resp = self.dhan.place_order(\n                security_id=order["security_id"],\n                exchange_segment=order["exchange_segment"],\n                transaction_type=order["transaction_type"],\n                quantity=order["quantity"],\n                order_type=order["order_type"],\n                product_type=order["product_type"],\n                price=order.get("price", 0.0),\n                trigger_price=order.get("trigger_price", 0.0),\n            )\n            self.logger.info(\n                "place_order success: security_id=%s order_id=%s",\n                order.get("security_id"),\n                resp.get("orderId") if isinstance(resp, dict) else resp,\n            )\n            return resp if isinstance(resp, dict) else {"orderId": resp}\n        except Exception as e:\n            self.logger.error("failed place_order: %s", e)\n            raise\n\n    def modify_order(self, order_id: str, order: dict) -> dict:\n        """Modify an open order via DhanHQ API v2."""\n        try:\n            resp = self.dhan.modify_order(\n                order_id=order_id,\n                order_type=order.get("order_type", "LIMIT"),\n                leg_name=order.get("leg_name", "ENTRY_LEG"),\n                quantity=order.get("quantity", 1),\n                price=order.get("price", 0.0),\n                disclosed_quantity=order.get("disclosed_quantity", 0),\n                trigger_price=order.get("trigger_price", 0.0),\n            )\n            return resp if isinstance(resp, dict) else {"orderId": resp}\n        except Exception as e:\n            self.logger.error("failed modify_order %s: %s", order_id, e)\n            raise\n\n    def cancel_order(self, order_id: str) -> dict:\n        """Cancel an open order."""\n        try:\n            resp = self.dhan.cancel_order(order_id)\n            return resp if isinstance(resp, dict) else {"orderId": resp}\n        except Exception as e:\n            self.logger.error("failed cancel_order %s: %s", order_id, e)\n            raise\n\n    # ------------------------------------------------------------------\n    # Position & Holdings\n    # ------------------------------------------------------------------\n\n    def get_positions(self) -> list:\n        """Fetch all open positions."""\n        try:\n            resp = self.dhan.get_positions()\n            if isinstance(resp, dict):\n                return resp.get("data", [])\n            return resp if isinstance(resp, list) else []\n        except Exception as e:\n            self.logger.error("failed get_positions: %s", e)\n            return []\n\n    def get_holdings(self) -> list:\n        """Fetch all holdings."""\n        try:\n            resp = self.dhan.get_holdings()\n            if isinstance(resp, dict):\n                return resp.get("data", [])\n            return resp if isinstance(resp, list) else []\n        except Exception as e:\n            self.logger.error("failed get_holdings: %s", e)\n            return []\n\n    def get_order_list(self) -> list:\n        """Fetch today's order list."""\n        try:\n            resp = self.dhan.get_order_list()\n            if isinstance(resp, dict):\n                return resp.get("data", [])\n            return resp if isinstance(resp, list) else []\n        except Exception as e:\n            self.logger.error("failed get_order_list: %s", e)\n            return []\n\n    def get_order_by_id(self, order_id: str) -> dict:\n        """Fetch a single order by ID."""\n        try:\n            resp = self.dhan.get_order_by_id(order_id)\n            return resp if isinstance(resp, dict) else {}\n        except Exception as e:\n            self.logger.error("failed get_order_by_id %s: %s", order_id, e)\n            return {}\n
+"""
+dhan_executor.py -- Dhan API v2 Order Execution Engine
+
+Replaces kite_executor.py. Handles order placement, modification,
+cancellation, position and holdings management via the DhanHQ API v2.
+"""
+
+import logging
+
+
+from dhanhq import dhanhq
+
+logger = logging.getLogger(__name__)
+
+
+class DhanExecutor:
+    """Order execution engine backed by DhanHQ API v2.
+
+    Exchange segment constants (dhanhq v2):
+        NSE_EQ, NSE_FNO, BSE_EQ, BSE_FNO, MCX_COMM
+
+    Transaction type constants (dhanhq v2):
+        BUY, SELL
+    """
+
+    # Exchange segment constants
+    NSE_EQ = "NSE_EQ"
+    NSE_FNO = "NSE_FNO"
+    BSE_EQ = "BSE_EQ"
+    BSE_FNO = "BSE_FNO"
+    MCX_COMM = "MCX_COMM"
+
+    # Transaction type constants
+    BUY = "BUY"
+    SELL = "SELL"
+
+    def __init__(self, client_id: str, access_token: str) -> None:
+        """Initialise the DhanHQ client.
+
+        Args:
+            client_id:    Your Dhan client / user ID.
+            access_token: Dhan API access token.
+        """
+        self.dhan = dhanhq(client_id, access_token)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.info("DhanExecutor initialised for client_id=%s", client_id)
+
+    # ------------------------------------------------------------------
+    # Order management
+    # ------------------------------------------------------------------
+
+    def place_order(self, order: dict) -> dict:
+        """Place an order via DhanHQ API v2.
+
+        Args:
+            order: Dict with keys:
+                - security_id       (str)  : Dhan security identifier
+                - exchange_segment  (str)  : e.g. NSE_EQ, NSE_FNO
+                - transaction_type  (str)  : BUY | SELL
+                - quantity          (int)  : number of shares/lots
+                - order_type        (str)  : LIMIT | MARKET | SL | SL-M
+                - product_type      (str)  : INTRADAY | MARGIN | CNC | CO | BO
+                - price             (float): limit price (0 for MARKET)
+                - trigger_price     (float): stop-loss trigger (0 if N/A)
+
+        Returns:
+            dict: API response containing order_id on success.
+        """
+        try:
+            resp = self.dhan.place_order(
+                security_id=order["security_id"],
+                exchange_segment=order["exchange_segment"],
+                transaction_type=order["transaction_type"],
+                quantity=order["quantity"],
+                order_type=order["order_type"],
+                product_type=order["product_type"],
+                price=order.get("price", 0.0),
+                trigger_price=order.get("trigger_price", 0.0),
+            )
+            self.logger.info(
+                "place_order success: security_id=%s order_id=%s",
+                order.get("security_id"),
+                resp.get("orderId") if isinstance(resp, dict) else resp,
+            )
+            return resp if isinstance(resp, dict) else {"orderId": resp}
+        except Exception as e:
+            self.logger.error("failed place_order: %s", e)
+            raise
+
+    def modify_order(self, order_id: str, order: dict) -> dict:
+        """Modify an open order via DhanHQ API v2."""
+        try:
+            resp = self.dhan.modify_order(
+                order_id=order_id,
+                order_type=order.get("order_type", "LIMIT"),
+                leg_name=order.get("leg_name", "ENTRY_LEG"),
+                quantity=order.get("quantity", 1),
+                price=order.get("price", 0.0),
+                disclosed_quantity=order.get("disclosed_quantity", 0),
+                trigger_price=order.get("trigger_price", 0.0),
+            )
+            return resp if isinstance(resp, dict) else {"orderId": resp}
+        except Exception as e:
+            self.logger.error("failed modify_order %s: %s", order_id, e)
+            raise
+
+    def cancel_order(self, order_id: str) -> dict:
+        """Cancel an open order."""
+        try:
+            resp = self.dhan.cancel_order(order_id)
+            return resp if isinstance(resp, dict) else {"orderId": resp}
+        except Exception as e:
+            self.logger.error("failed cancel_order %s: %s", order_id, e)
+            raise
+
+    # ------------------------------------------------------------------
+    # Position & Holdings
+    # ------------------------------------------------------------------
+
+    def get_positions(self) -> list:
+        """Fetch all open positions."""
+        try:
+            resp = self.dhan.get_positions()
+            if isinstance(resp, dict):
+                return resp.get("data", [])
+            return resp if isinstance(resp, list) else []
+        except Exception as e:
+            self.logger.error("failed get_positions: %s", e)
+            return []
+
+    def get_holdings(self) -> list:
+        """Fetch all holdings."""
+        try:
+            resp = self.dhan.get_holdings()
+            if isinstance(resp, dict):
+                return resp.get("data", [])
+            return resp if isinstance(resp, list) else []
+        except Exception as e:
+            self.logger.error("failed get_holdings: %s", e)
+            return []
+
+    def get_order_list(self) -> list:
+        """Fetch today's order list."""
+        try:
+            resp = self.dhan.get_order_list()
+            if isinstance(resp, dict):
+                return resp.get("data", [])
+            return resp if isinstance(resp, list) else []
+        except Exception as e:
+            self.logger.error("failed get_order_list: %s", e)
+            return []
+
+    def get_order_by_id(self, order_id: str) -> dict:
+        """Fetch a single order by ID."""
+        try:
+            resp = self.dhan.get_order_by_id(order_id)
+            return resp if isinstance(resp, dict) else {}
+        except Exception as e:
+            self.logger.error("failed get_order_by_id %s: %s", order_id, e)
+            return {}

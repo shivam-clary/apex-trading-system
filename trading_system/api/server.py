@@ -13,6 +13,46 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
+# ---- WebSocket manager ----
+class ConnectionManager:
+    def __init__(self):
+        self.active: List[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self.active.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        self.active.remove(ws)
+
+    async def broadcast(self, data: Dict):
+        msg = json.dumps(data)
+        dead = []
+        for ws in self.active:
+            try:
+                await ws.send_text(msg)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.active.remove(ws)
+
+
+# ---- Models ----
+class KillSwitchRequest(BaseModel):
+    action: str  # "HALT" or "RESUME"
+    reason: Optional[str] = None
+
+
+class ManualOverrideRequest(BaseModel):
+    symbol: str
+    direction: str  # BUY / SELL / CLOSE
+    quantity: int
+    reason: str
+
+
+manager = ConnectionManager()
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="APEX Trading Intelligence System",
@@ -27,42 +67,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # ---- WebSocket manager ----
-    class ConnectionManager:
-        def __init__(self):
-            self.active: List[WebSocket] = []
-
-        async def connect(self, ws: WebSocket):
-            await ws.accept()
-            self.active.append(ws)
-
-        def disconnect(self, ws: WebSocket):
-            self.active.remove(ws)
-
-        async def broadcast(self, data: Dict):
-            msg = json.dumps(data)
-            dead = []
-            for ws in self.active:
-                try:
-                    await ws.send_text(msg)
-                except Exception:
-                    dead.append(ws)
-            for ws in dead:
-                self.active.remove(ws)
-
-    manager = ConnectionManager()
-
-    # ---- Models ----
-    class KillSwitchRequest(BaseModel):
-        action: str  # "HALT" or "RESUME"
-        reason: Optional[str] = None
-
-    class ManualOverrideRequest(BaseModel):
-        symbol: str
-        direction: str  # BUY / SELL / CLOSE
-        quantity: int
-        reason: str
 
     # ---- Routes ----
     @app.get("/health")

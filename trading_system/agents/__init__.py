@@ -6,12 +6,12 @@ from .technical_analysis import TechnicalAnalysisAgent
 from .algo_strategy import AlgoStrategyAgent
 from .options_derivatives import OptionsDerivativesAgent
 from .market_regime import MarketRegimeAgent
-from .sgx_premarket import SGXPreMarketAgent
+from .sgx_pre_market import SGXPreMarketAgent
 from .fundamental_analysis import FundamentalAnalysisAgent
 from .fii_dii_flow import FIIDIIFlowAgent
 from .rbi_macro import RBIIndianMacroAgent
 from .global_macro import GlobalMacroAgent
-from .indian_news import IndianNewsEventsAgent
+from .indian_news_events import IndianNewsEventsAgent
 from .global_news import GlobalNewsAgent
 from .sentiment_positioning import SentimentPositioningAgent
 from .zero_dte_expiry import ZeroDTEExpiryAgent

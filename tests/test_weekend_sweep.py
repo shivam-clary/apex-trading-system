@@ -1,1 +1,195 @@
-aW1wb3J0IHN5cwppbXBvcnQganNvbgpmcm9tIHBhdGhsaWIgaW1wb3J0IFBhdGgKZnJvbSB1bml0dGVzdC5tb2NrIGltcG9ydCBwYXRjaCwgTWFnaWNNb2NrCgppbXBvcnQgcHl0ZXN0CgpzeXMucGF0aC5pbnNlcnQoMCwgc3RyKFBhdGgoX19maWxlX18pLnJlc29sdmUoKS5wYXJlbnQucGFyZW50IC8gInNjcmlwdHMiKSkKCgpAcHl0ZXN0LmZpeHR1cmUKZGVmIHdzKCk6CiAgICBpbXBvcnQgaW1wb3J0bGliCiAgICByZXR1cm4gaW1wb3J0bGliLmltcG9ydF9tb2R1bGUoIndlZWtlbmRfc3dlZXAiKQoKCmNsYXNzIFRlc3RTY29yZVNlbnRpbWVudDoKICAgIGRlZiB0ZXN0X2J1bGxpc2hfa2V5d29yZChzZWxmLCB3cyk6CiAgICAgICAgc2VudGltZW50LCBjb25mID0gd3Muc2NvcmVfc2VudGltZW50KCJNYXJrZXRzIHJhbGx5IG9uIHN0cm9uZyBHRFAgZ3Jvd3RoIikKICAgICAgICBhc3NlcnQgc2VudGltZW50ID09ICJCVUxMSVNIIgogICAgICAgIGFzc2VydCAwLjUgPCBjb25mIDw9IDAuOTUKCiAgICBkZWYgdGVzdF9iZWFyaXNoX2tleXdvcmQoc2VsZiwgd3MpOgogICAgICAgIHNlbnRpbWVudCwgY29uZiA9IHdzLnNjb3JlX3NlbnRpbWVudCgiTmlmdHkgY3Jhc2ggYXMgcmVjZXNzaW9uIGZlYXJzIG1vdW50IikKICAgICAgICBhc3NlcnQgc2VudGltZW50ID09ICJCRUFSSVNIIgogICAgICAgIGFzc2VydCAwLjUgPCBjb25mIDw9IDAuOTUKCiAgICBkZWYgdGVzdF9uZXV0cmFsX25vX2tleXdvcmRzKHNlbGYsIHdzKToKICAgICAgICBzZW50aW1lbnQsIGNvbmYgPSB3cy5zY29yZV9zZW50aW1lbnQoIlRyYWRpbmcgaG91cnMgdG9kYXkgYXJlIG5vcm1hbCIpCiAgICAgICAgYXNzZXJ0IHNlbnRpbWVudCA9PSAiTkVVVFJBTCIKICAgICAgICBhc3NlcnQgY29uZiA9PSAwLjUKCiAgICBkZWYgdGVzdF9taXhlZF9yZXR1cm5zX25ldXRyYWwoc2VsZiwgd3MpOgogICAgICAgIHNlbnRpbWVudCwgXyA9IHdzLnNjb3JlX3NlbnRpbWVudCgicmFsbHkgY3Jhc2giKQogICAgICAgIGFzc2VydCBzZW50aW1lbnQgPT0gIk5FVVRSQUwiCgogICAgZGVmIHRlc3Rfc3VtbWFyeV9jb250cmlidXRlcyhzZWxmLCB3cyk6CiAgICAgICAgc2VudGltZW50LCBfID0gd3Muc2NvcmVfc2VudGltZW50KAogICAgICAgICAgICAiTWFya2V0cyBjbG9zZSBmbGF0IiwKICAgICAgICAgICAgIkZJSSBidXlpbmcgc3VyZ2UgYXMgcmF0ZSBjdXQgZXhwZWN0YXRpb25zIHJpc2UiCiAgICAgICAgKQogICAgICAgIGFzc2VydCBzZW50aW1lbnQgPT0gIkJVTExJU0giCgoKY2xhc3MgVGVzdElzTWFjcm9SZWxldmFudDoKICAgIGRlZiB0ZXN0X3JiaV9yZWxldmFudChzZWxmLCB3cyk6CiAgICAgICAgYXNzZXJ0IHdzLmlzX21hY3JvX3JlbGV2YW50KCJSQkkga2VlcHMgcmVwbyByYXRlIHVuY2hhbmdlZCIpIGlzIFRydWUKCiAgICBkZWYgdGVzdF9uaWZ0eV9yZWxldmFudChzZWxmLCB3cyk6CiAgICAgICAgYXNzZXJ0IHdzLmlzX21hY3JvX3JlbGV2YW50KCJOaWZ0eSBoaXRzIGFsbC10aW1lIGhpZ2giKSBpcyBUcnVlCgogICAgZGVmIHRlc3RfaXJyZWxldmFudChzZWxmLCB3cyk6CiAgICAgICAgYXNzZXJ0IHdzLmlzX21hY3JvX3JlbGV2YW50KCJDZWxlYnJpdHkgd2VkZGluZyBuZXdzIikgaXMgRmFsc2UKCiAgICBkZWYgdGVzdF9jcnVkZV9yZWxldmFudChzZWxmLCB3cyk6CiAgICAgICAgYXNzZXJ0IHdzLmlzX21hY3JvX3JlbGV2YW50KCJDcnVkZSBvaWwgZmFsbHMgMyBwZXJjZW50IikgaXMgVHJ1ZQoKCmNsYXNzIFRlc3RBZ2dyZWdhdGVTbmFwc2hvdDoKICAgIGRlZiBfbWFrZV9hcnRpY2xlcyhzZWxmLCBidWxsPTMsIGJlYXI9MSwgbmV1dHJhbD0yKToKICAgICAgICBhcnRzID0gW10KICAgICAgICBmb3IgXyBpbiByYW5nZShidWxsKToKICAgICAgICAgICAgYXJ0cy5hcHBlbmQoeyJzZW50aW1lbnQiOiAiQlVMTElTSCIsICJjb25maWRlbmNlIjogMC44LAogICAgICAgICAgICAgICAgICAgICAgICAgIm1hY3JvX3JlbGV2YW50IjogVHJ1ZSwgInRpdGxlIjogIlJhbGx5IiwKICAgICAgICAgICAgICAgICAgICAgICAgICJzb3VyY2UiOiAiZXQiLCAicHVibGlzaGVkIjogTm9uZSwgImxpbmsiOiAiIn0pCiAgICAgICAgZm9yIF8gaW4gcmFuZ2UoYmVhcik6CiAgICAgICAgICAgIGFydHMuYXBwZW5kKHsic2VudGltZW50IjogIkJFQVJJU0giLCAiY29uZmlkZW5jZSI6IDAuNzUsCiAgICAgICAgICAgICAgICAgICAgICAgICAibWFjcm9fcmVsZXZhbnQiOiBGYWxzZSwgInRpdGxlIjogIkNyYXNoIiwKICAgICAgICAgICAgICAgICAgICAgICAgICJzb3VyY2UiOiAibWMiLCAicHVibGlzaGVkIjogTm9uZSwgImxpbmsiOiAiIn0pCiAgICAgICAgZm9yIF8gaW4gcmFuZ2UobmV1dHJhbCk6CiAgICAgICAgICAgIGFydHMuYXBwZW5kKHsic2VudGltZW50IjogIk5FVVRSQUwiLCAiY29uZmlkZW5jZSI6IDAuNSwKICAgICAgICAgICAgICAgICAgICAgICAgICJtYWNyb19yZWxldmFudCI6IEZhbHNlLCAidGl0bGUiOiAiRmxhdCIsCiAgICAgICAgICAgICAgICAgICAgICAgICAic291cmNlIjogInJldXRlcnMiLCAicHVibGlzaGVkIjogTm9uZSwgImxpbmsiOiAiIn0pCiAgICAgICAgcmV0dXJuIGFydHMKCiAgICBkZWYgdGVzdF9zbmFwc2hvdF9rZXlzKHNlbGYsIHdzKToKICAgICAgICBzbmFwID0gd3MuYWdncmVnYXRlX3NuYXBzaG90KHNlbGYuX21ha2VfYXJ0aWNsZXMoKSwgNDgpCiAgICAgICAgcmVxdWlyZWQgPSB7CiAgICAgICAgICAgICJ0aW1lc3RhbXAiLCAibG9va2JhY2tfaG91cnMiLCAidG90YWxfYXJ0aWNsZXMiLAogICAgICAgICAgICAic2VudGltZW50X2JyZWFrZG93biIsICJuZXRfc2VudGltZW50X3Njb3JlIiwKICAgICAgICAgICAgIm92ZXJhbGxfc2VudGltZW50IiwgInNpZ25hbF9zdHJlbmd0aCIsICJ0b3BfaGVhZGxpbmVzIiwKICAgICAgICAgICAgImZlZWRfYnJlYWtkb3duIiwgInNvdXJjZSIsICJ2ZXJzaW9uIgogICAgICAgIH0KICAgICAgICBhc3NlcnQgcmVxdWlyZWQuaXNzdWJzZXQoc25hcC5rZXlzKCkpCgogICAgZGVmIHRlc3RfdG90YWxfYXJ0aWNsZXNfY29ycmVjdChzZWxmLCB3cyk6CiAgICAgICAgYXJ0cyA9IHNlbGYuX21ha2VfYXJ0aWNsZXMoYnVsbD00LCBiZWFyPTIsIG5ldXRyYWw9MykKICAgICAgICBzbmFwID0gd3MuYWdncmVnYXRlX3NuYXBzaG90KGFydHMsIDQ4KQogICAgICAgIGFzc2VydCBzbmFwWyJ0b3RhbF9hcnRpY2xlcyJdID09IDkKCiAgICBkZWYgdGVzdF9idWxsaXNoX292ZXJhbGwoc2VsZiwgd3MpOgogICAgICAgIGFydHMgPSBzZWxmLl9tYWtlX2FydGljbGVzKGJ1bGw9OCwgYmVhcj0xLCBuZXV0cmFsPTEpCiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChhcnRzLCA0OCkKICAgICAgICBhc3NlcnQgc25hcFsib3ZlcmFsbF9zZW50aW1lbnQiXSA9PSAiQlVMTElTSCIKCiAgICBkZWYgdGVzdF9iZWFyaXNoX292ZXJhbGwoc2VsZiwgd3MpOgogICAgICAgIGFydHMgPSBzZWxmLl9tYWtlX2FydGljbGVzKGJ1bGw9MSwgYmVhcj04LCBuZXV0cmFsPTEpCiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChhcnRzLCA0OCkKICAgICAgICBhc3NlcnQgc25hcFsib3ZlcmFsbF9zZW50aW1lbnQiXSA9PSAiQkVBUklTSCIKCiAgICBkZWYgdGVzdF9uZXV0cmFsX292ZXJhbGxfYmFsYW5jZWQoc2VsZiwgd3MpOgogICAgICAgIGFydHMgPSBzZWxmLl9tYWtlX2FydGljbGVzKGJ1bGw9NSwgYmVhcj01LCBuZXV0cmFsPTApCiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChhcnRzLCA0OCkKICAgICAgICBhc3NlcnQgc25hcFsib3ZlcmFsbF9zZW50aW1lbnQiXSA9PSAiTkVVVFJBTCIKCiAgICBkZWYgdGVzdF9lbXB0eV9hcnRpY2xlcyhzZWxmLCB3cyk6CiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChbXSwgNDgpCiAgICAgICAgYXNzZXJ0IHNuYXBbInRvdGFsX2FydGljbGVzIl0gPT0gMAogICAgICAgIGFzc2VydCBzbmFwWyJuZXRfc2VudGltZW50X3Njb3JlIl0gPT0gMC4wCgogICAgZGVmIHRlc3RfcGN0X3N1bXNfdG9fMTAwKHNlbGYsIHdzKToKICAgICAgICBzbmFwID0gd3MuYWdncmVnYXRlX3NuYXBzaG90KHNlbGYuX21ha2VfYXJ0aWNsZXMoKSwgNDgpCiAgICAgICAgYmQgPSBzbmFwWyJzZW50aW1lbnRfYnJlYWtkb3duIl0KICAgICAgICB0b3RhbCA9IGJkWyJidWxsaXNoX3BjdCJdICsgYmRbImJlYXJpc2hfcGN0Il0gKyBiZFsibmV1dHJhbF9wY3QiXQogICAgICAgIGFzc2VydCBhYnModG90YWwgLSAxMDAuMCkgPCAwLjUKCiAgICBkZWYgdGVzdF9zaWduYWxfc3RyZW5ndGhfbm9uX25lZ2F0aXZlKHNlbGYsIHdzKToKICAgICAgICBzbmFwID0gd3MuYWdncmVnYXRlX3NuYXBzaG90KHNlbGYuX21ha2VfYXJ0aWNsZXMoKSwgNDgpCiAgICAgICAgYXNzZXJ0IHNuYXBbInNpZ25hbF9zdHJlbmd0aCJdID49IDAKCiAgICBkZWYgdGVzdF90b3BfaGVhZGxpbmVzX21heF8xMChzZWxmLCB3cyk6CiAgICAgICAgYXJ0cyA9IHNlbGYuX21ha2VfYXJ0aWNsZXMoYnVsbD0xNSwgYmVhcj01LCBuZXV0cmFsPTUpCiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChhcnRzLCA0OCkKICAgICAgICBhc3NlcnQgbGVuKHNuYXBbInRvcF9oZWFkbGluZXMiXSkgPD0gMTAKCiAgICBkZWYgdGVzdF9zbmFwc2hvdF9qc29uX3NlcmlhbGlzYWJsZShzZWxmLCB3cyk6CiAgICAgICAgc25hcCA9IHdzLmFnZ3JlZ2F0ZV9zbmFwc2hvdChzZWxmLl9tYWtlX2FydGljbGVzKCksIDQ4KQogICAgICAgIGR1bXBlZCA9IGpzb24uZHVtcHMoc25hcCkKICAgICAgICBhc3NlcnQgbGVuKGR1bXBlZCkgPiAxMAoKCmNsYXNzIFRlc3RXcml0ZVRvRmlsZToKICAgIGRlZiB0ZXN0X3dyaXRlc192YWxpZF9qc29uKHNlbGYsIHdzLCB0bXBfcGF0aCk6CiAgICAgICAgc25hcCA9IHsidGVzdCI6IFRydWUsICJ2YWx1ZSI6IDQyfQogICAgICAgIG91dCA9IHRtcF9wYXRoIC8gInNuYXAuanNvbiIKICAgICAgICB3cy53cml0ZV90b19maWxlKHNuYXAsIG91dCkKICAgICAgICBsb2FkZWQgPSBqc29uLmxvYWRzKG91dC5yZWFkX3RleHQoKSkKICAgICAgICBhc3NlcnQgbG9hZGVkWyJ0ZXN0Il0gaXMgVHJ1ZQogICAgICAgIGFzc2VydCBsb2FkZWRbInZhbHVlIl0gPT0gNDIKCiAgICBkZWYgdGVzdF9jcmVhdGVzX3BhcmVudF9kaXJzKHNlbGYsIHdzLCB0bXBfcGF0aCk6CiAgICAgICAgc25hcCA9IHsib2siOiAxfQogICAgICAgIG91dCA9IHRtcF9wYXRoIC8gIm5lc3RlZCIgLyAiZGlyIiAvICJzbmFwLmpzb24iCiAgICAgICAgd3Mud3JpdGVfdG9fZmlsZShzbmFwLCBvdXQpCiAgICAgICAgYXNzZXJ0IG91dC5leGlzdHMoKQoKCmNsYXNzIFRlc3RXcml0ZVRvUmVkaXM6CiAgICBkZWYgdGVzdF9za2lwc193aGVuX25vX3JlZGlzKHNlbGYsIHdzKToKICAgICAgICBvcmlnaW5hbCA9IHdzLkhBU19SRURJUwogICAgICAgIHdzLkhBU19SRURJUyA9IEZhbHNlCiAgICAgICAgdHJ5OgogICAgICAgICAgICB3cy53cml0ZV90b19yZWRpcyh7InRlc3QiOiAxfSkKICAgICAgICBmaW5hbGx5OgogICAgICAgICAgICB3cy5IQVNfUkVESVMgPSBvcmlnaW5hbAoKICAgIGRlZiB0ZXN0X2NhbGxzX3NldGV4X29uX3N1Y2Nlc3Moc2VsZiwgd3MpOgogICAgICAgIGlmIG5vdCB3cy5IQVNfUkVESVM6CiAgICAgICAgICAgIHB5dGVzdC5za2lwKCJyZWRpcy1weSBub3QgaW5zdGFsbGVkIikKICAgICAgICBtb2NrX3IgPSBNYWdpY01vY2soKQogICAgICAgIG1vY2tfci5waW5nLnJldHVybl92YWx1ZSA9IFRydWUKICAgICAgICB3aXRoIHBhdGNoKCJ3ZWVrZW5kX3N3ZWVwLnJlZGlzX2xpYi5SZWRpcyIsIHJldHVybl92YWx1ZT1tb2NrX3IpOgogICAgICAgICAgICB3cy53cml0ZV90b19yZWRpcyh7ImRhdGEiOiAidGVzdCJ9KQogICAgICAgIG1vY2tfci5zZXRleC5hc3NlcnRfY2FsbGVkX29uY2UoKQogICAgICAgIGtleSA9IG1vY2tfci5zZXRleC5jYWxsX2FyZ3NbMF1bMF0KICAgICAgICBhc3NlcnQga2V5ID09ICJXRUVLRU5EX01BQ1JPX1NOQVBTSE9UIgoKICAgIGRlZiB0ZXN0X2hhbmRsZXNfcmVkaXNfY29ubmVjdGlvbl9lcnJvcihzZWxmLCB3cyk6CiAgICAgICAgaWYgbm90IHdzLkhBU19SRURJUzoKICAgICAgICAgICAgcHl0ZXN0LnNraXAoInJlZGlzLXB5IG5vdCBpbnN0YWxsZWQiKQogICAgICAgIGltcG9ydCByZWRpcyBhcyByZWRpc19saWJfaW5uZXIKICAgICAgICB3aXRoIHBhdGNoKCJ3ZWVrZW5kX3N3ZWVwLnJlZGlzX2xpYi5SZWRpcyIpIGFzIG1vY2tfY2xzOgogICAgICAgICAgICBtb2NrX2Nscy5yZXR1cm5fdmFsdWUucGluZy5zaWRlX2VmZmVjdCA9IHJlZGlzX2xpYl9pbm5lci5Db25uZWN0aW9uRXJyb3IoInJlZnVzZWQiKQogICAgICAgICAgICB3cy53cml0ZV90b19yZWRpcyh7ImRhdGEiOiAidGVzdCJ9KQoKCmNsYXNzIFRlc3RQYXJzZUZlZWRFbnRyeVRpbWU6CiAgICBkZWYgdGVzdF9yZXR1cm5zX2RhdGV0aW1lX2Zyb21fcHVibGlzaGVkX3BhcnNlZChzZWxmLCB3cyk6CiAgICAgICAgZnJvbSBkYXRldGltZSBpbXBvcnQgdGltZXpvbmUKICAgICAgICBlbnRyeSA9IE1hZ2ljTW9jaygpCiAgICAgICAgZW50cnkucHVibGlzaGVkX3BhcnNlZCA9ICgyMDI2LCAzLCA2LCAxMiwgMCwgMCwgMCwgMCwgMCkKICAgICAgICBlbnRyeS51cGRhdGVkX3BhcnNlZCA9IE5vbmUKICAgICAgICBlbnRyeS5jcmVhdGVkX3BhcnNlZCA9IE5vbmUKICAgICAgICByZXN1bHQgPSB3cy5wYXJzZV9mZWVkX2VudHJ5X3RpbWUoZW50cnkpCiAgICAgICAgYXNzZXJ0IHJlc3VsdCBpcyBub3QgTm9uZQogICAgICAgIGFzc2VydCByZXN1bHQudHppbmZvID09IHRpbWV6b25lLnV0YwogICAgICAgIGFzc2VydCByZXN1bHQueWVhciA9PSAyMDI2CgogICAgZGVmIHRlc3RfcmV0dXJuc19ub25lX3doZW5fbm9fdGltZShzZWxmLCB3cyk6CiAgICAgICAgZW50cnkgPSBNYWdpY01vY2soKQogICAgICAgIGVudHJ5LnB1Ymxpc2hlZF9wYXJzZWQgPSBOb25lCiAgICAgICAgZW50cnkudXBkYXRlZF9wYXJzZWQgPSBOb25lCiAgICAgICAgZW50cnkuY3JlYXRlZF9wYXJzZWQgPSBOb25lCiAgICAgICAgcmVzdWx0ID0gd3MucGFyc2VfZmVlZF9lbnRyeV90aW1lKGVudHJ5KQogICAgICAgIGFzc2VydCByZXN1bHQgaXMgTm9uZQo=
+import sys
+import json
+from pathlib import Path
+from unittest.mock import patch, MagicMock
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+
+@pytest.fixture
+def ws():
+    import importlib
+    return importlib.import_module("weekend_sweep")
+
+
+class TestScoreSentiment:
+    def test_bullish_keyword(self, ws):
+        sentiment, conf = ws.score_sentiment("Markets rally on strong GDP growth")
+        assert sentiment == "BULLISH"
+        assert 0.5 < conf <= 0.95
+
+    def test_bearish_keyword(self, ws):
+        sentiment, conf = ws.score_sentiment("Nifty crash as recession fears mount")
+        assert sentiment == "BEARISH"
+        assert 0.5 < conf <= 0.95
+
+    def test_neutral_no_keywords(self, ws):
+        sentiment, conf = ws.score_sentiment("Trading hours today are normal")
+        assert sentiment == "NEUTRAL"
+        assert conf == 0.5
+
+    def test_mixed_returns_neutral(self, ws):
+        sentiment, _ = ws.score_sentiment("rally crash")
+        assert sentiment == "NEUTRAL"
+
+    def test_summary_contributes(self, ws):
+        sentiment, _ = ws.score_sentiment(
+            "Markets close flat",
+            "FII buying surge as rate cut expectations rise"
+        )
+        assert sentiment == "BULLISH"
+
+
+class TestIsMacroRelevant:
+    def test_rbi_relevant(self, ws):
+        assert ws.is_macro_relevant("RBI keeps repo rate unchanged") is True
+
+    def test_nifty_relevant(self, ws):
+        assert ws.is_macro_relevant("Nifty hits all-time high") is True
+
+    def test_irrelevant(self, ws):
+        assert ws.is_macro_relevant("Celebrity wedding news") is False
+
+    def test_crude_relevant(self, ws):
+        assert ws.is_macro_relevant("Crude oil falls 3 percent") is True
+
+
+class TestAggregateSnapshot:
+    def _make_articles(self, bull=3, bear=1, neutral=2):
+        arts = []
+        for _ in range(bull):
+            arts.append({"sentiment": "BULLISH", "confidence": 0.8,
+                         "macro_relevant": True, "title": "Rally",
+                         "source": "et", "published": None, "link": ""})
+        for _ in range(bear):
+            arts.append({"sentiment": "BEARISH", "confidence": 0.75,
+                         "macro_relevant": False, "title": "Crash",
+                         "source": "mc", "published": None, "link": ""})
+        for _ in range(neutral):
+            arts.append({"sentiment": "NEUTRAL", "confidence": 0.5,
+                         "macro_relevant": False, "title": "Flat",
+                         "source": "reuters", "published": None, "link": ""})
+        return arts
+
+    def test_snapshot_keys(self, ws):
+        snap = ws.aggregate_snapshot(self._make_articles(), 48)
+        required = {
+            "timestamp", "lookback_hours", "total_articles",
+            "sentiment_breakdown", "net_sentiment_score",
+            "overall_sentiment", "signal_strength", "top_headlines",
+            "feed_breakdown", "source", "version"
+        }
+        assert required.issubset(snap.keys())
+
+    def test_total_articles_correct(self, ws):
+        arts = self._make_articles(bull=4, bear=2, neutral=3)
+        snap = ws.aggregate_snapshot(arts, 48)
+        assert snap["total_articles"] == 9
+
+    def test_bullish_overall(self, ws):
+        arts = self._make_articles(bull=8, bear=1, neutral=1)
+        snap = ws.aggregate_snapshot(arts, 48)
+        assert snap["overall_sentiment"] == "BULLISH"
+
+    def test_bearish_overall(self, ws):
+        arts = self._make_articles(bull=1, bear=8, neutral=1)
+        snap = ws.aggregate_snapshot(arts, 48)
+        assert snap["overall_sentiment"] == "BEARISH"
+
+    def test_neutral_overall_balanced(self, ws):
+        arts = self._make_articles(bull=5, bear=5, neutral=0)
+        snap = ws.aggregate_snapshot(arts, 48)
+        assert snap["overall_sentiment"] == "NEUTRAL"
+
+    def test_empty_articles(self, ws):
+        snap = ws.aggregate_snapshot([], 48)
+        assert snap["total_articles"] == 0
+        assert snap["net_sentiment_score"] == 0.0
+
+    def test_pct_sums_to_100(self, ws):
+        snap = ws.aggregate_snapshot(self._make_articles(), 48)
+        bd = snap["sentiment_breakdown"]
+        total = bd["bullish_pct"] + bd["bearish_pct"] + bd["neutral_pct"]
+        assert abs(total - 100.0) < 0.5
+
+    def test_signal_strength_non_negative(self, ws):
+        snap = ws.aggregate_snapshot(self._make_articles(), 48)
+        assert snap["signal_strength"] >= 0
+
+    def test_top_headlines_max_10(self, ws):
+        arts = self._make_articles(bull=15, bear=5, neutral=5)
+        snap = ws.aggregate_snapshot(arts, 48)
+        assert len(snap["top_headlines"]) <= 10
+
+    def test_snapshot_json_serialisable(self, ws):
+        snap = ws.aggregate_snapshot(self._make_articles(), 48)
+        dumped = json.dumps(snap)
+        assert len(dumped) > 10
+
+
+class TestWriteToFile:
+    def test_writes_valid_json(self, ws, tmp_path):
+        snap = {"test": True, "value": 42}
+        out = tmp_path / "snap.json"
+        ws.write_to_file(snap, out)
+        loaded = json.loads(out.read_text())
+        assert loaded["test"] is True
+        assert loaded["value"] == 42
+
+    def test_creates_parent_dirs(self, ws, tmp_path):
+        snap = {"ok": 1}
+        out = tmp_path / "nested" / "dir" / "snap.json"
+        ws.write_to_file(snap, out)
+        assert out.exists()
+
+
+class TestWriteToRedis:
+    def test_skips_when_no_redis(self, ws):
+        original = ws.HAS_REDIS
+        ws.HAS_REDIS = False
+        try:
+            ws.write_to_redis({"test": 1})
+        finally:
+            ws.HAS_REDIS = original
+
+    def test_calls_setex_on_success(self, ws):
+        if not ws.HAS_REDIS:
+            pytest.skip("redis-py not installed")
+        mock_r = MagicMock()
+        mock_r.ping.return_value = True
+        with patch("weekend_sweep.redis_lib.Redis", return_value=mock_r):
+            ws.write_to_redis({"data": "test"})
+        mock_r.setex.assert_called_once()
+        key = mock_r.setex.call_args[0][0]
+        assert key == "WEEKEND_MACRO_SNAPSHOT"
+
+    def test_handles_redis_connection_error(self, ws):
+        if not ws.HAS_REDIS:
+            pytest.skip("redis-py not installed")
+        import redis as redis_lib_inner
+        with patch("weekend_sweep.redis_lib.Redis") as mock_cls:
+            mock_cls.return_value.ping.side_effect = redis_lib_inner.ConnectionError("refused")
+            ws.write_to_redis({"data": "test"})
+
+
+class TestParseFeedEntryTime:
+    def test_returns_datetime_from_published_parsed(self, ws):
+        from datetime import timezone
+        entry = MagicMock()
+        entry.published_parsed = (2026, 3, 6, 12, 0, 0, 0, 0, 0)
+        entry.updated_parsed = None
+        entry.created_parsed = None
+        result = ws.parse_feed_entry_time(entry)
+        assert result is not None
+        assert result.tzinfo == timezone.utc
+        assert result.year == 2026
+
+    def test_returns_none_when_no_time(self, ws):
+        entry = MagicMock()
+        entry.published_parsed = None
+        entry.updated_parsed = None
+        entry.created_parsed = None
+        result = ws.parse_feed_entry_time(entry)
+        assert result is None

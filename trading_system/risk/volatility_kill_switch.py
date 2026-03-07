@@ -25,8 +25,13 @@ class VolatilityKillSwitch:
     and flags for human review or end-of-day only exit mode.
     """
 
-    def __init__(self, config: Optional[KillSwitchConfig] = None):
+    def __init__(self, config: Optional[Any] = None, **kwargs):
+        # Handle cases where APEXConfig is passed instead of KillSwitchConfig
         self.config = config or KillSwitchConfig()
+        if hasattr(self.config, "VIX_KILL_SWITCH_THRESHOLD"):
+            # Map APEXConfig fields to KillSwitchConfig if available
+            self.config.india_vix_halt_threshold = getattr(self.config, "VIX_KILL_SWITCH_THRESHOLD", 30.0)
+        
         self.is_active = False
         self.trigger_reason: Optional[str] = None
         self.triggered_at: Optional[datetime] = None

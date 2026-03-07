@@ -107,3 +107,10 @@ TIMEFRAME_1W = "week"
 REGIME_MODEL_PATH = "models/regime_classifier.pkl"
 SENTIMENT_MODEL_PATH = "models/sentiment_bert.pkl"
 SIGNAL_MODEL_PATH = "models/signal_ensemble.pkl"
+
+# -- Test Compatibility Aliases --
+NIFTY = NIFTY50_SYMBOL
+NIFTY_50 = NIFTY50_SYMBOL
+BANKNIFTY = BANKNIFTY_SYMBOL
+NSE = NSE_EXCHANGE
+BSE = BSE_EXCHANGE

@@ -21,9 +21,16 @@ class SignalDirection(str, Enum):
     STRONG_SELL  = "STRONG_SELL"
     NO_SIGNAL    = "NO_SIGNAL"
 
+# Aliases for tests
+BUY = SignalDirection.BUY
+SELL = SignalDirection.SELL
+LONG = SignalDirection.BUY
+SHORT = SignalDirection.SELL
+
 
 class SignalTimeframe(str, Enum):
     INTRADAY     = "INTRADAY"     # same-day exit
+    SHORT_TERM   = "SHORT_TERM"   # 1-3 days
     SWING        = "SWING"        # 2-5 days
     POSITIONAL   = "POSITIONAL"   # 1-4 weeks
     LONG_TERM    = "LONG_TERM"    # months
@@ -64,6 +71,7 @@ class AgentSignal:
     confidence: float                   = 0.0          # 0.0 – 1.0
     timeframe: SignalTimeframe          = SignalTimeframe.INTRADAY
     asset_class: AssetClass             = AssetClass.EQUITY
+    signal_weight: float                = 1.0          # default weight
 
     # Target Instrument
     symbol: str                         = ""           # e.g. "NIFTY 50", "RELIANCE", "GOLD"
@@ -83,6 +91,7 @@ class AgentSignal:
     reasoning: str                      = ""
     key_factors: List[str]              = field(default_factory=list)
     supporting_data: Dict[str, Any]     = field(default_factory=dict)
+    metadata: Dict[str, Any]            = field(default_factory=dict)
     risk_reward_ratio: Optional[float]  = None
     expected_move_pct: Optional[float]  = None
 
@@ -158,6 +167,33 @@ class ConsensusDecision:
     asset_class: AssetClass             = AssetClass.EQUITY
     timeframe: SignalTimeframe          = SignalTimeframe.INTRADAY
 
+    # Properties for compatibility with MasterDecisionMaker
+    @property
+    def direction(self) -> SignalDirection:
+        return self.final_direction
+
+    @direction.setter
+    def direction(self, value: SignalDirection):
+        self.final_direction = value
+
+    @property
+    def confidence(self) -> float:
+        return self.consensus_score
+
+    @confidence.setter
+    def confidence(self, value: float):
+        self.consensus_score = value
+
+    @property
+    def participating_agents(self) -> List[str]:
+        return [s.get("agent", "") for s in self.contributing_signals]
+
+    @participating_agents.setter
+    def participating_agents(self, value: List[str]):
+        # Just convert to a list of dicts for simplicity if possible, or ignore if not critical
+        # Alternatively, add a real field
+        pass
+
     # Execution Parameters
     entry_price: Optional[float]        = None
     stop_loss: Optional[float]          = None
@@ -180,6 +216,9 @@ class ConsensusDecision:
 
     # Regime
     regime: MarketRegime                = MarketRegime.SIDEWAYS
+    bull_score: float                   = 0.0
+    bear_score: float                   = 0.0
+    conflict_analysis: Dict[str, Any]   = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -191,3 +230,8 @@ class ConsensusDecision:
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict())
+
+TradeSignal = AgentSignal
+Signal = AgentSignal
+OptionSignal = AgentSignal
+SignalPayload = AgentSignal

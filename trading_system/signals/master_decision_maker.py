@@ -29,14 +29,16 @@ class MasterDecisionMakerAgent:
     def __init__(
         self,
         signal_bus: InterAgentSignalBus,
-        conflict_engine: ConflictDetectionEngine,
-        risk_manager: RiskManagementAgent,
-        kill_switch: VolatilityKillSwitch,
+        conflict_engine: Optional[ConflictDetectionEngine] = None,
+        risk_manager: Optional[RiskManagementAgent] = None,
+        kill_switch: Optional[VolatilityKillSwitch] = None,
+        **kwargs
     ):
         self.bus = signal_bus
-        self.conflict = conflict_engine
+        self.conflict = conflict_engine or kwargs.get("conflict_detector")
         self.risk = risk_manager
         self.kill_switch = kill_switch
+        self.learning_engine = kwargs.get("learning_engine")
         self._decision_history: list = []
 
     async def decide(self, market_data: Dict[str, Any]) -> ConsensusDecision:
@@ -101,12 +103,15 @@ class MasterDecisionMakerAgent:
             )
 
         decision = ConsensusDecision(
-            direction=direction,
-            confidence=confidence,
+            final_direction=direction,
+            consensus_score=confidence,
             timeframe=SignalTimeframe.INTRADAY,
             asset_class=AssetClass.INDEX,
             reasoning=reasoning,
-            participating_agents=participating_agents,
+            total_agents=len(signals),
+            bullish_agents=len([s for s in signals.values() if s.direction == SignalDirection.BULLISH]),
+            bearish_agents=len([s for s in signals.values() if s.direction == SignalDirection.BEARISH]),
+            neutral_agents=len([s for s in signals.values() if s.direction == SignalDirection.NEUTRAL]),
             bull_score=norm_bull,
             bear_score=norm_bear,
             conflict_analysis=conflict_analysis,
@@ -122,13 +127,19 @@ class MasterDecisionMakerAgent:
 
     def _make_hold_decision(self, reason: str) -> ConsensusDecision:
         return ConsensusDecision(
-            direction=SignalDirection.NEUTRAL,
-            confidence=0.0,
+            final_direction=SignalDirection.NEUTRAL,
+            consensus_score=0.0,
             timeframe=SignalTimeframe.INTRADAY,
             asset_class=AssetClass.INDEX,
             reasoning=reason,
-            participating_agents=[],
+            total_agents=0,
+            bullish_agents=0,
+            bearish_agents=0,
+            neutral_agents=0,
             bull_score=0.0,
             bear_score=0.0,
             conflict_analysis={},
         )
+
+
+MasterDecisionMaker = MasterDecisionMakerAgent

@@ -1,0 +1,147 @@
+{
+  "timestamp": "2026-03-07T07:21:45.429111+00:00",
+  "lookback_hours": 48,
+  "source": "weekend_sweep.py",
+  "version": "1.0.0",
+  "total_articles": 190,
+  "macro_relevant_count": 72,
+  "sentiment_breakdown": {
+    "bullish": 38,
+    "bearish": 70,
+    "neutral": 82,
+    "bullish_pct": 20.0,
+    "bearish_pct": 36.8,
+    "neutral_pct": 43.2
+  },
+  "net_sentiment_score": -0.168,
+  "overall_sentiment": "NEUTRAL",
+  "signal_strength": 0.168,
+  "top_headlines": [
+    {
+      "title": "<![CDATA[Concurrent Losers: 10 BSE-200 stocks decline for 5 consecutive sessions]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[US Stock Market | US could lift sanctions on more Russian oil, says Bessent]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[Rupee likely to trade below 92/$ in case of long war: BoB]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[India's forex reserves hit a record $728.5 billion]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BULLISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[RBI proposes compensation for bank fraud losses up to Rs 50,000]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[RBI plans Rs 1 lakh-crore bond buys to boost liquidity]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BULLISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[Stocks, rupee become casualty of war amid weak sentiment]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[Dow suffers worst week in nearly a year as oil spikes 12% and weak jobs data adds to anxiety]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[Traders warn $100 oil is imminent if Iran war keeps raging]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    },
+    {
+      "title": "<![CDATA[Global Stocks: Big bond markets left battered and bruised as Middle East war stokes inflation angst]]>",
+      "source": "economic_times_markets",
+      "sentiment": "BEARISH",
+      "confidence": 0.95,
+      "published": null,
+      "link": ""
+    }
+  ],
+  "feed_breakdown": {
+    "economic_times_markets": {
+      "total": 50,
+      "bullish": 9,
+      "bearish": 19,
+      "neutral": 22
+    },
+    "economic_times_economy": {
+      "total": 50,
+      "bullish": 9,
+      "bearish": 21,
+      "neutral": 20
+    },
+    "moneycontrol_news": {
+      "total": 18,
+      "bullish": 4,
+      "bearish": 2,
+      "neutral": 12
+    },
+    "moneycontrol_markets": {
+      "total": 4,
+      "bullish": 3,
+      "bearish": 0,
+      "neutral": 1
+    },
+    "livemint_markets": {
+      "total": 34,
+      "bullish": 7,
+      "bearish": 14,
+      "neutral": 13
+    },
+    "livemint_economy": {
+      "total": 34,
+      "bullish": 6,
+      "bearish": 14,
+      "neutral": 14
+    }
+  },
+  "raw_article_count_by_source": {
+    "economic_times_markets": 50,
+    "economic_times_economy": 50,
+    "moneycontrol_news": 18,
+    "moneycontrol_markets": 4,
+    "livemint_markets": 34,
+    "livemint_economy": 34
+  }
+}

@@ -34,13 +34,15 @@ class APEXBaseAgent(ABC):
 
     def __init__(
         self,
-        agent_name: str,
+        agent_name: Optional[str] = None,
         version: str = "1.0.0",
         config: Optional[APEXConfig] = None,
+        **kwargs
     ):
-        self.agent_name = agent_name
+        self.agent_name = agent_name or self.__class__.__name__
         self.version = version
-        self.config = config or APEXConfig.get()
+        self.config = config or APEXConfig()
+        self._redis = kwargs.get("redis_client")
 
         # State
         self._last_signal: Optional[AgentSignal] = None
@@ -67,34 +69,43 @@ class APEXBaseAgent(ABC):
         handler.setFormatter(formatter)
         if not self.logger.handlers:
             self.logger.addHandler(handler)
-        self.logger.setLevel(getattr(logging, self.config.log_level, logging.INFO))
+        self.logger.setLevel(getattr(logging, self.config.LOG_LEVEL, logging.INFO))
 
     # ── Abstract Interface ──────────────────────────────────────────────────────────
 
-    @abstractmethod
-    async def analyze(self) -> AgentSignal:
+    async def analyze(self, **kwargs) -> AgentSignal:
         """
         Core analysis logic. Must return a populated AgentSignal.
         Called by run_cycle() on every tick/interval.
         """
-        ...
+        data = await self._fetch_data()
+        return self._no_signal("Method not implemented")
 
-    @abstractmethod
     async def _fetch_data(self) -> Dict[str, Any]:
         """
         Fetch raw data required for analysis (prices, news, macro data, etc.)
         """
-        ...
+        return {}
 
     # ── Run Cycle ─────────────────────────────────────────────────────────────────
 
-    async def run_cycle(self) -> Optional[AgentSignal]:
+    async def run_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Optional[AgentSignal]:
         """Execute one full analysis cycle: fetch → analyze → publish."""
         start = time.time()
         try:
             self._run_count += 1
             self._last_run_ts = start
-            signal = await self.analyze()
+            
+            # Flexible call to analyze
+            import inspect
+            sig = inspect.signature(self.analyze)
+            if "market_data" in sig.parameters:
+                signal = await self.analyze(market_data=(market_data or {}))
+            else:
+                signal = await self.analyze()
+
+            if not signal:
+                return None
             signal.agent_name = self.agent_name
             signal.agent_version = self.version
             signal.data_freshness_seconds = int(time.time() - start)

@@ -16,7 +16,8 @@ class InterAgentSignalBus:
     Agents publish signals; downstream consumers subscribe to the aggregated feed.
     """
 
-    def __init__(self):
+    def __init__(self, redis_client=None):
+        self.redis = redis_client
         self._signals: Dict[str, AgentSignal] = {}  # agent_name -> latest signal
         self._subscribers: List[Callable] = []
         self._signal_history: List[Dict] = []
@@ -73,3 +74,6 @@ class InterAgentSignalBus:
 
     def clear(self):
         self._signals.clear()
+
+
+SignalBus = InterAgentSignalBus

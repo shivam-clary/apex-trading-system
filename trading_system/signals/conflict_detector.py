@@ -72,3 +72,6 @@ class ConflictDetectionEngine:
                 if d1 != "NEUTRAL" and d2 != "NEUTRAL" and d1 != d2:
                     conflicts.append((g1, g2))
         return conflicts
+
+
+ConflictDetector = ConflictDetectionEngine
