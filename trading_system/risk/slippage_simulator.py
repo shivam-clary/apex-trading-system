@@ -45,7 +45,8 @@ class SlippageCostSimulator:
         stamp = notional * self.config.stamp_duty_pct
         slippage = notional * (self.config.market_impact_bps / 10000)
         total_cost = total_brokerage + gst + stt + nse_charge + sebi + stamp + slippage
-        cost_per_lot = total_cost / (quantity / lot_size) if lot_size else total_cost
+        cost_per_lot = total_cost / \
+            (quantity / lot_size) if lot_size else total_cost
         return {
             "notional": notional,
             "brokerage": total_brokerage,
@@ -71,7 +72,8 @@ class SlippageCostSimulator:
         nse_charge = notional * self.config.nse_txn_charge_pct * 2
         sebi = notional * self.config.sebi_charge_pct * 2
         stamp = notional * self.config.stamp_duty_pct
-        slippage = max(notional * (self.config.market_impact_bps / 10000), 0.05 * quantity)
+        slippage = max(
+            notional * (self.config.market_impact_bps / 10000), 0.05 * quantity)
         total = brokerage + gst + stt + nse_charge + sebi + stamp + slippage
         return {
             "notional": notional,
@@ -87,7 +89,9 @@ class SlippageCostSimulator:
         self, entry_price: float, quantity: int, instrument: str = "FUT", lot_size: int = 50
     ) -> float:
         if instrument == "FUT":
-            costs = self.calculate_futures_cost(entry_price, quantity, lot_size)
+            costs = self.calculate_futures_cost(
+                entry_price, quantity, lot_size)
         else:
-            costs = self.calculate_options_cost(entry_price, quantity, lot_size)
+            costs = self.calculate_options_cost(
+                entry_price, quantity, lot_size)
         return costs["breakeven_move_pts"] if instrument == "FUT" else costs["breakeven_premium_move"]

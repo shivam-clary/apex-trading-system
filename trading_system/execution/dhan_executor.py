@@ -43,7 +43,9 @@ class DhanExecutor:
         """
         self.dhan = dhanhq(client_id, access_token)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.info("DhanExecutor initialised for client_id=%s", client_id)
+        self.logger.info(
+            "DhanExecutor initialised for client_id=%s",
+            client_id)
 
     # ------------------------------------------------------------------
     # Order management

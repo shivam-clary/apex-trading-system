@@ -67,8 +67,16 @@ class IndianMarketDataAgent(APEXBaseAgent):
     async def _fetch_yahoo_fallback(self) -> Dict[str, Any]:
         """Yahoo Finance fallback for Nifty data."""
         import yfinance as yf
-        nifty = yf.download("^NSEI", period="1d", interval="5m", progress=False)
-        banknifty = yf.download("^NSEBANK", period="1d", interval="5m", progress=False)
+        nifty = yf.download(
+            "^NSEI",
+            period="1d",
+            interval="5m",
+            progress=False)
+        banknifty = yf.download(
+            "^NSEBANK",
+            period="1d",
+            interval="5m",
+            progress=False)
         return {
             "nifty": nifty,
             "banknifty": banknifty,
@@ -106,7 +114,8 @@ class IndianMarketDataAgent(APEXBaseAgent):
         except Exception:
             return 0.0
 
-    def _score_price_action(self, df: pd.DataFrame, symbol: str) -> tuple[SignalDirection, float, str]:
+    def _score_price_action(self, df: pd.DataFrame,
+                            symbol: str) -> tuple[SignalDirection, float, str]:
         """Score price action using EMA crossover + VWAP + RSI."""
         if df is None or df.empty or len(df) < 20:
             return SignalDirection.NO_SIGNAL, 0.0, "Insufficient data"
@@ -130,7 +139,8 @@ class IndianMarketDataAgent(APEXBaseAgent):
 
         # EMA crossover
         ema_bullish = float(ema9.iloc[-1]) > float(ema21.iloc[-1])
-        ema_prev_bullish = float(ema9.iloc[-2]) > float(ema21.iloc[-2]) if len(ema9) > 1 else ema_bullish
+        ema_prev_bullish = float(
+            ema9.iloc[-2]) > float(ema21.iloc[-2]) if len(ema9) > 1 else ema_bullish
 
         # Scoring
         score = 0.0
@@ -167,7 +177,8 @@ class IndianMarketDataAgent(APEXBaseAgent):
             factors.append(f"Price above VWAP by {vwap_deviation*100:.2f}%")
         elif vwap_deviation < -0.003:
             score -= 0.15
-            factors.append(f"Price below VWAP by {abs(vwap_deviation)*100:.2f}%")
+            factors.append(
+                f"Price below VWAP by {abs(vwap_deviation)*100:.2f}%")
 
         reasoning = f"{symbol} analysis: " + "; ".join(factors)
         if score >= 0.45:
@@ -175,7 +186,8 @@ class IndianMarketDataAgent(APEXBaseAgent):
         elif score >= 0.25:
             return SignalDirection.BUY, score, reasoning
         elif score <= -0.45:
-            return SignalDirection.STRONG_SELL, min(abs(score), 0.95), reasoning
+            return SignalDirection.STRONG_SELL, min(
+                abs(score), 0.95), reasoning
         elif score <= -0.25:
             return SignalDirection.SELL, abs(score), reasoning
         else:
@@ -186,8 +198,10 @@ class IndianMarketDataAgent(APEXBaseAgent):
         nifty_df = data.get("nifty")
         banknifty_df = data.get("banknifty")
 
-        nifty_dir, nifty_conf, nifty_reason = self._score_price_action(nifty_df, "NIFTY50")
-        bank_dir, bank_conf, bank_reason = self._score_price_action(banknifty_df, "BANKNIFTY")
+        nifty_dir, nifty_conf, nifty_reason = self._score_price_action(
+            nifty_df, "NIFTY50")
+        bank_dir, bank_conf, bank_reason = self._score_price_action(
+            banknifty_df, "BANKNIFTY")
         breadth = self._compute_market_breadth(nifty_df)
 
         # Combine: if both agree, boost confidence

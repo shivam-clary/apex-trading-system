@@ -33,7 +33,8 @@ class DhanDataFeed:
         self.client_id = client_id
         self.access_token = access_token
         self._feed: Optional[marketfeed.DhanFeed] = None
-        self._subscriptions: List[tuple] = []   # [(exchange_segment, security_id, mode), ...]
+        # [(exchange_segment, security_id, mode), ...]
+        self._subscriptions: List[tuple] = []
         self._callbacks: Dict[str, List[Callable]] = {
             "tick": [],
             "order_update": [],
@@ -56,9 +57,11 @@ class DhanDataFeed:
         entry = (exchange_segment, security_id, mode)
         if entry not in self._subscriptions:
             self._subscriptions.append(entry)
-            logger.info(f"Subscribed: {exchange_segment}:{security_id} mode={mode}")
+            logger.info(
+                f"Subscribed: {exchange_segment}:{security_id} mode={mode}")
 
-    def subscribe_many(self, instruments: List[Dict], mode: int = None) -> None:
+    def subscribe_many(
+            self, instruments: List[Dict], mode: int = None) -> None:
         """
         Subscribe to multiple instruments at once.
         instruments: [{"security_id": "1333", "exchange_segment": "NSE_FNO"}, ...]
@@ -66,9 +69,15 @@ class DhanDataFeed:
         if mode is None:
             mode = self.FULL
         for inst in instruments:
-            self.subscribe(inst["security_id"], inst.get("exchange_segment", "NSE_FNO"), mode)
+            self.subscribe(
+                inst["security_id"],
+                inst.get(
+                    "exchange_segment",
+                    "NSE_FNO"),
+                mode)
 
-    def unsubscribe(self, security_id: str, exchange_segment: str = "NSE_FNO") -> None:
+    def unsubscribe(self, security_id: str,
+                    exchange_segment: str = "NSE_FNO") -> None:
         """Unsubscribe from an instrument."""
         self._subscriptions = [
             s for s in self._subscriptions

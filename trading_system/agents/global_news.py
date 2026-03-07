@@ -68,7 +68,14 @@ class GlobalNewsAgent(APEXBaseAgent):
     def _score_headlines(self, headlines: List[Dict]) -> float:
         score = 0.0
         for item in headlines:
-            text = (item.get("title", "") + " " + item.get("summary", "")).lower()
+            text = (
+                item.get(
+                    "title",
+                    "") +
+                " " +
+                item.get(
+                    "summary",
+                    "")).lower()
             for kw in self.RISK_OFF_KEYWORDS:
                 if kw in text:
                     score -= 12

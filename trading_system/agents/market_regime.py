@@ -32,13 +32,15 @@ class MarketRegimeAgent(APEXBaseAgent):
         symbols = {"nifty": "^NSEI", "vix": "^INDIAVIX", "us_vix": "^VIX"}
         for key, sym in symbols.items():
             try:
-                df = yf.download(sym, period="1y", interval="1d", progress=False)
+                df = yf.download(
+                    sym, period="1y", interval="1d", progress=False)
                 data[key] = df
             except Exception as e:
                 self.logger.warning(f"Regime data fetch failed for {sym}: {e}")
         return data
 
-    def _detect_regime(self, nifty_df, vix_df) -> Tuple[MarketRegime, float, str]:
+    def _detect_regime(
+            self, nifty_df, vix_df) -> Tuple[MarketRegime, float, str]:
         if nifty_df is None or nifty_df.empty:
             return MarketRegime.SIDEWAYS, 0.4, "Insufficient data"
 
@@ -46,14 +48,17 @@ class MarketRegimeAgent(APEXBaseAgent):
 
         # SMA200 position
         sma200 = close.rolling(200).mean()
-        above_sma200 = float(close.to_numpy()[-1]) > float(sma200.to_numpy()[-1]) if not sma200.empty else True
+        above_sma200 = float(close.to_numpy(
+        )[-1]) > float(sma200.to_numpy()[-1]) if not sma200.empty else True
 
         # 20-day realized volatility (annualized)
         returns = close.pct_change().dropna()
-        vol_20d = float(returns.to_numpy()[-20:].std() * np.sqrt(252) * 100) if len(returns) >= 20 else 15.0
+        vol_20d = float(returns.to_numpy(
+        )[-20:].std() * np.sqrt(252) * 100) if len(returns) >= 20 else 15.0
 
         # 60-day trend return
-        trend_return = float((close.to_numpy()[-1] / close.to_numpy()[-61] - 1) * 100) if len(close) > 61 else 0.0
+        trend_return = float(
+            (close.to_numpy()[-1] / close.to_numpy()[-61] - 1) * 100) if len(close) > 61 else 0.0
 
         # VIX
         india_vix = 15.0
@@ -66,7 +71,8 @@ class MarketRegimeAgent(APEXBaseAgent):
         if india_vix >= VOLATILITY_KILL_SWITCH_VIX:
             regime = MarketRegime.CRISIS
             confidence = 0.90
-            factors.append(f"India VIX={india_vix:.1f} CRISIS level (>={VOLATILITY_KILL_SWITCH_VIX})")
+            factors.append(
+                f"India VIX={india_vix:.1f} CRISIS level (>={VOLATILITY_KILL_SWITCH_VIX})")
         elif vol_20d > 25:
             regime = MarketRegime.HIGH_VOL
             confidence = 0.80
@@ -74,7 +80,8 @@ class MarketRegimeAgent(APEXBaseAgent):
         elif trend_return > 8 and above_sma200 and vol_20d < 18:
             regime = MarketRegime.BULL_TREND
             confidence = 0.85
-            factors.append(f"60d return=+{trend_return:.1f}%, above SMA200, low vol")
+            factors.append(
+                f"60d return=+{trend_return:.1f}%, above SMA200, low vol")
         elif trend_return < -8 and not above_sma200:
             regime = MarketRegime.BEAR_TREND
             confidence = 0.85
@@ -82,14 +89,16 @@ class MarketRegimeAgent(APEXBaseAgent):
         elif vol_20d < 10:
             regime = MarketRegime.LOW_VOL
             confidence = 0.70
-            factors.append(f"Realized vol={vol_20d:.1f}% (suppressed volatility)")
+            factors.append(
+                f"Realized vol={vol_20d:.1f}% (suppressed volatility)")
         else:
             regime = MarketRegime.SIDEWAYS
             confidence = 0.60
             factors.append(f"60d return={trend_return:.1f}%, indecisive")
 
         self._current_regime = regime
-        reasoning = f"Regime={regime.value}. VIX={india_vix:.1f}, Vol20d={vol_20d:.1f}%, Trend60d={trend_return:.1f}%. " + "; ".join(factors)
+        reasoning = f"Regime={regime.value}. VIX={india_vix:.1f}, Vol20d={vol_20d:.1f}%, Trend60d={trend_return:.1f}%. " + \
+            "; ".join(factors)
         return regime, confidence, reasoning
 
     async def analyze(self) -> AgentSignal:

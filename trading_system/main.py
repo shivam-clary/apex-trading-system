@@ -10,6 +10,29 @@ Or directly:
     python -m trading_system.main
 """
 from __future__ import annotations
+from trading_system.api.server import create_app
+from trading_system.agents import (
+    IndianMarketDataAgent, GlobalMarketDataAgent, TechnicalAnalysisAgent,
+    AlgoStrategyAgent, OptionsDerivativesAgent, MarketRegimeAgent,
+    SGXPreMarketAgent, CommoditiesAgent, FundamentalAnalysisAgent,
+    FIIDIIFlowAgent, RBIIndianMacroAgent, GlobalMacroAgent,
+    IndianNewsEventsAgent, GlobalNewsAgent, SentimentPositioningAgent,
+    ZeroDTEExpiryAgent,
+)
+from trading_system.execution.smart_router import SmartOrderRouter
+from trading_system.execution.dhan_executor import DhanExecutor
+from trading_system.execution.order_manager import OrderManagementSystem
+from trading_system.risk.portfolio_manager import PortfolioManager
+from trading_system.risk.volatility_kill_switch import VolatilityKillSwitch
+from trading_system.risk.risk_manager import RiskManager
+from trading_system.signals.learning_engine import LearningEngine
+from trading_system.signals.master_decision_maker import MasterDecisionMaker
+from trading_system.signals.conflict_detector import ConflictDetector
+from trading_system.signals.signal_bus import SignalBus
+from trading_system.data.dhan_feed import DhanDataFeed
+from trading_system.data.kafka_setup import KafkaManager
+from trading_system.data.redis_client import RedisClient
+from trading_system.core.config import Config
 
 import asyncio
 import logging
@@ -22,29 +45,6 @@ logging.basicConfig(
 )
 log = logging.getLogger("apex.main")
 
-from trading_system.core.config import Config
-from trading_system.data.redis_client import RedisClient
-from trading_system.data.kafka_setup import KafkaManager
-from trading_system.data.dhan_feed import DhanDataFeed
-from trading_system.signals.signal_bus import SignalBus
-from trading_system.signals.conflict_detector import ConflictDetector
-from trading_system.signals.master_decision_maker import MasterDecisionMaker
-from trading_system.signals.learning_engine import LearningEngine
-from trading_system.risk.risk_manager import RiskManager
-from trading_system.risk.volatility_kill_switch import VolatilityKillSwitch
-from trading_system.risk.portfolio_manager import PortfolioManager
-from trading_system.execution.order_manager import OrderManagementSystem
-from trading_system.execution.dhan_executor import DhanExecutor
-from trading_system.execution.smart_router import SmartOrderRouter
-from trading_system.agents import (
-    IndianMarketDataAgent, GlobalMarketDataAgent, TechnicalAnalysisAgent,
-    AlgoStrategyAgent, OptionsDerivativesAgent, MarketRegimeAgent,
-    SGXPreMarketAgent, CommoditiesAgent, FundamentalAnalysisAgent,
-    FIIDIIFlowAgent, RBIIndianMacroAgent, GlobalMacroAgent,
-    IndianNewsEventsAgent, GlobalNewsAgent, SentimentPositioningAgent,
-    ZeroDTEExpiryAgent,
-)
-from trading_system.api.server import create_app
 
 app = create_app()
 
@@ -57,8 +57,11 @@ class APEXOrchestrator:
         self.running = False
         self._tasks: List[asyncio.Task] = []
 
-        self.redis = RedisClient(host=self.config.REDIS_HOST, port=self.config.REDIS_PORT)
-        self.kafka = KafkaManager(bootstrap_servers=self.config.KAFKA_BOOTSTRAP_SERVERS)
+        self.redis = RedisClient(
+            host=self.config.REDIS_HOST,
+            port=self.config.REDIS_PORT)
+        self.kafka = KafkaManager(
+            bootstrap_servers=self.config.KAFKA_BOOTSTRAP_SERVERS)
 
         self.signal_bus = SignalBus(redis_client=self.redis)
         self.conflict_detector = ConflictDetector()
@@ -151,4 +154,8 @@ async def shutdown():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("trading_system.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(
+        "trading_system.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False)

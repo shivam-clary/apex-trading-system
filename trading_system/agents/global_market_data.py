@@ -83,7 +83,8 @@ class GlobalMarketDataAgent(APEXBaseAgent):
         # VIX penalty
         if india_vix and india_vix > 25:
             bullish_score *= 0.6
-            key_factors.append(f"India VIX={india_vix:.1f} (elevated, reducing confidence)")
+            key_factors.append(
+                f"India VIX={india_vix:.1f} (elevated, reducing confidence)")
         if us_vix and us_vix > 30:
             bullish_score *= 0.5
             key_factors.append(f"US VIX={us_vix:.1f} (fear, strong reduction)")
@@ -103,7 +104,8 @@ class GlobalMarketDataAgent(APEXBaseAgent):
             direction=direction,
             confidence=confidence,
             symbol="NIFTY 50",
-            reasoning=f"Global markets weighted signal: score={normalized:.4f}. " + "; ".join(key_factors[:4]),
+            reasoning=f"Global markets weighted signal: score={normalized:.4f}. " + "; ".join(
+                key_factors[:4]),
             key_factors=key_factors,
             india_vix=india_vix,
             supporting_data=data,

@@ -37,7 +37,8 @@ class WalkForwardOptimizer:
         results = []
 
         for i, (train_df, test_df) in enumerate(windows):
-            best_params, best_score = self._optimise(train_df, signal_fn_factory, metric)
+            best_params, best_score = self._optimise(
+                train_df, signal_fn_factory, metric)
             signal_fn = signal_fn_factory(best_params)
             engine = BacktestEngine(BacktestConfig())
             oos_result = engine.run(test_df, signal_fn)
@@ -58,7 +59,8 @@ class WalkForwardOptimizer:
             "is_oos_correlation": self._is_oos_correlation(results),
         }
 
-    def _create_windows(self, df: pd.DataFrame) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def _create_windows(
+            self, df: pd.DataFrame) -> List[Tuple[pd.DataFrame, pd.DataFrame]]:
         n = len(df)
         window_size = n // self.config.n_splits
         windows = []

@@ -65,7 +65,8 @@ class AgentSignal:
     signal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     agent_name: str = ""
     agent_version: str = "1.0.0"
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.utcnow().isoformat())
 
     # Core Signal
     direction: SignalDirection = SignalDirection.NO_SIGNAL
@@ -103,7 +104,8 @@ class AgentSignal:
 
     # Signal Health
     data_freshness_seconds: int = 0            # how old is the data
-    model_accuracy_30d: Optional[float] = None         # recent accuracy of this agent
+    # recent accuracy of this agent
+    model_accuracy_30d: Optional[float] = None
     is_override: bool = False        # manual override flag
 
     def to_dict(self) -> Dict[str, Any]:
@@ -128,7 +130,9 @@ class AgentSignal:
     @property
     def is_actionable(self) -> bool:
         return (
-            self.direction not in (SignalDirection.NO_SIGNAL, SignalDirection.NEUTRAL)
+            self.direction not in (
+                SignalDirection.NO_SIGNAL,
+                SignalDirection.NEUTRAL)
             and self.confidence >= 0.40
             and self.data_freshness_seconds < 300
         )
@@ -154,7 +158,8 @@ class ConsensusDecision:
     synthesized from all 20 agent signals.
     """
     decision_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.utcnow().isoformat())
 
     # Decision
     final_direction: SignalDirection = SignalDirection.NO_SIGNAL

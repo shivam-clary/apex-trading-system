@@ -87,4 +87,5 @@ class OrderManagementSystem:
             return False
 
     def get_open_orders(self) -> "List[Order]":
-        return [o for o in self._orders.values() if o.status not in ("cancelled", "filled")]
+        return [o for o in self._orders.values(
+        ) if o.status not in ("cancelled", "filled")]

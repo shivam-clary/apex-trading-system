@@ -25,9 +25,11 @@ class SmartOrderRouter:
         self.executor = executor
         self.oms = oms
 
-    async def route(self, parent_order: Order, config: Optional[RoutingConfig] = None) -> List[str]:
+    async def route(self, parent_order: Order,
+                    config: Optional[RoutingConfig] = None) -> List[str]:
         cfg = config or RoutingConfig()
-        slice_qty = self._calculate_slices(parent_order.quantity, cfg.slices, parent_order.symbol)
+        slice_qty = self._calculate_slices(
+            parent_order.quantity, cfg.slices, parent_order.symbol)
         broker_ids = []
 
         for i, qty in enumerate(slice_qty):
@@ -47,7 +49,8 @@ class SmartOrderRouter:
 
         return broker_ids
 
-    def _calculate_slices(self, total_qty: int, n_slices: int, symbol: str) -> List[int]:
+    def _calculate_slices(self, total_qty: int,
+                          n_slices: int, symbol: str) -> List[int]:
         base = total_qty // n_slices
         remainder = total_qty % n_slices
         slices = [base] * n_slices

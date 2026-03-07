@@ -109,9 +109,12 @@ class MasterDecisionMakerAgent:
             asset_class=AssetClass.INDEX,
             reasoning=reasoning,
             total_agents=len(signals),
-            bullish_agents=len([s for s in signals.values() if s.direction == SignalDirection.BULLISH]),
-            bearish_agents=len([s for s in signals.values() if s.direction == SignalDirection.BEARISH]),
-            neutral_agents=len([s for s in signals.values() if s.direction == SignalDirection.NEUTRAL]),
+            bullish_agents=len([s for s in signals.values()
+                               if s.direction == SignalDirection.BULLISH]),
+            bearish_agents=len([s for s in signals.values()
+                               if s.direction == SignalDirection.BEARISH]),
+            neutral_agents=len([s for s in signals.values()
+                               if s.direction == SignalDirection.NEUTRAL]),
             bull_score=norm_bull,
             bear_score=norm_bear,
             conflict_analysis=conflict_analysis,

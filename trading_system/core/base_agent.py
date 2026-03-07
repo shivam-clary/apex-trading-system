@@ -67,9 +67,13 @@ class APEXBaseAgent(ABC):
         handler.setFormatter(formatter)
         if not self.logger.handlers:
             self.logger.addHandler(handler)
-        self.logger.setLevel(getattr(logging, self.config.LOG_LEVEL, logging.INFO))
+        self.logger.setLevel(
+            getattr(
+                logging,
+                self.config.LOG_LEVEL,
+                logging.INFO))
 
-    # ── Abstract Interface ──────────────────────────────────────────────────────────
+    # ── Abstract Interface ──────────────────────────────────────────────────
 
     async def analyze(self, **kwargs) -> AgentSignal:
         """
@@ -85,9 +89,10 @@ class APEXBaseAgent(ABC):
         """
         return {}
 
-    # ── Run Cycle ─────────────────────────────────────────────────────────────────
+    # ── Run Cycle ───────────────────────────────────────────────────────────
 
-    async def run_cycle(self, market_data: Optional[Dict[str, Any]] = None) -> Optional[AgentSignal]:
+    async def run_cycle(
+            self, market_data: Optional[Dict[str, Any]] = None) -> Optional[AgentSignal]:
         """Execute one full analysis cycle: fetch → analyze → publish."""
         start = time.time()
         try:
@@ -129,12 +134,13 @@ class APEXBaseAgent(ABC):
 
     async def run_forever(self, interval_seconds: int = 60):
         """Run analysis in a loop at the given interval."""
-        self.logger.info(f"Starting {self.agent_name} — interval={interval_seconds}s")
+        self.logger.info(
+            f"Starting {self.agent_name} — interval={interval_seconds}s")
         while True:
             await self.run_cycle()
             await asyncio.sleep(interval_seconds)
 
-    # ── Signal Publishing ──────────────────────────────────────────────────────────
+    # ── Signal Publishing ───────────────────────────────────────────────────
 
     async def _publish_signal(self, signal: AgentSignal):
         """Publish signal to Redis and Kafka."""
@@ -176,7 +182,7 @@ class APEXBaseAgent(ABC):
         except Exception as e:
             self.logger.warning(f"Kafka publish failed: {e}")
 
-    # ── Signal Factories ─────────────────────────────────────────────────────────────
+    # ── Signal Factories ────────────────────────────────────────────────────
 
     def _make_signal(
         self,
@@ -207,7 +213,7 @@ class APEXBaseAgent(ABC):
             reasoning=reason,
         )
 
-    # ── Health & Diagnostics ───────────────────────────────────────────────────────
+    # ── Health & Diagnostics ────────────────────────────────────────────────
 
     def health_status(self) -> Dict[str, Any]:
         return {
@@ -235,7 +241,9 @@ class APEXBaseAgent(ABC):
         recent = self._signal_history[-30:]
         if not recent:
             return None
-        hits = sum(1 for s in recent if abs(s.signal_score) >= WEAK_SIGNAL_THRESHOLD)
+        hits = sum(
+            1 for s in recent if abs(
+                s.signal_score) >= WEAK_SIGNAL_THRESHOLD)
         return hits / len(recent)
 
     async def close(self):

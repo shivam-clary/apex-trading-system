@@ -71,7 +71,8 @@ def create_app() -> FastAPI:
     # ---- Routes ----
     @app.get("/health")
     async def health():
-        return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+        return {"status": "ok", "timestamp": datetime.now(
+            timezone.utc).isoformat()}
 
     @app.get("/api/v1/system/status")
     async def system_status():

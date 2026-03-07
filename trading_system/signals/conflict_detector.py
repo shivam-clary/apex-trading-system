@@ -44,7 +44,8 @@ class ConflictDetectionEngine:
             "high_conflict": conflict_score > 0.5,
         }
 
-    def _get_group_directions(self, signals: Dict[str, AgentSignal]) -> Dict[str, str]:
+    def _get_group_directions(
+            self, signals: Dict[str, AgentSignal]) -> Dict[str, str]:
         group_dirs = {}
         for group, agent_names in self.LAYER_GROUPS.items():
             group_signals = [
@@ -52,8 +53,10 @@ class ConflictDetectionEngine:
             ]
             if not group_signals:
                 continue
-            bull = sum(1 for s in group_signals if s.direction == SignalDirection.BULLISH)
-            bear = sum(1 for s in group_signals if s.direction == SignalDirection.BEARISH)
+            bull = sum(1 for s in group_signals if s.direction ==
+                       SignalDirection.BULLISH)
+            bear = sum(1 for s in group_signals if s.direction ==
+                       SignalDirection.BEARISH)
             if bull > bear:
                 group_dirs[group] = "BULLISH"
             elif bear > bull:
@@ -62,7 +65,8 @@ class ConflictDetectionEngine:
                 group_dirs[group] = "NEUTRAL"
         return group_dirs
 
-    def _find_conflicts(self, group_dirs: Dict[str, str]) -> List[Tuple[str, str]]:
+    def _find_conflicts(
+            self, group_dirs: Dict[str, str]) -> List[Tuple[str, str]]:
         groups = list(group_dirs.items())
         conflicts = []
         for i in range(len(groups)):

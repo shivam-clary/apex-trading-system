@@ -27,7 +27,8 @@ class CommoditiesAgent(APEXBaseAgent):
         metals_score = self._score_base_metals(market_data)
         agri_score = self._score_agri(market_data)
 
-        total = crude_score * 0.40 + gold_score * 0.25 + metals_score * 0.25 + agri_score * 0.10
+        total = crude_score * 0.40 + gold_score * 0.25 + \
+            metals_score * 0.25 + agri_score * 0.10
         direction = (
             SignalDirection.BULLISH if total > 10
             else SignalDirection.BEARISH if total < -10

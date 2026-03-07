@@ -21,7 +21,8 @@ class KafkaManager:
             bootstrap_servers: Kafka broker addresses
         """
         self.bootstrap_servers = bootstrap_servers
-        self.admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
+        self.admin_client = AdminClient(
+            {"bootstrap.servers": bootstrap_servers})
         logger.info(f"Kafka manager initialized: {bootstrap_servers}")
 
     def create_topics(self) -> Dict[str, bool]:
@@ -34,10 +35,19 @@ class KafkaManager:
         topics = [
             NewTopic("market.ticks", num_partitions=12, replication_factor=1),
             NewTopic("agent.signals", num_partitions=6, replication_factor=1),
-            NewTopic("decisions.output", num_partitions=3, replication_factor=1),
+            NewTopic(
+                "decisions.output",
+                num_partitions=3,
+                replication_factor=1),
             NewTopic("risk.alerts", num_partitions=3, replication_factor=1),
-            NewTopic("execution.orders", num_partitions=3, replication_factor=1),
-            NewTopic("performance.metrics", num_partitions=2, replication_factor=1),
+            NewTopic(
+                "execution.orders",
+                num_partitions=3,
+                replication_factor=1),
+            NewTopic(
+                "performance.metrics",
+                num_partitions=2,
+                replication_factor=1),
         ]
 
         results = {}
@@ -111,7 +121,8 @@ class KafkaManager:
 
         consumer = Consumer(config)
         consumer.subscribe(topics)
-        logger.info(f"Kafka consumer created: group={group_id}, topics={topics}")
+        logger.info(
+            f"Kafka consumer created: group={group_id}, topics={topics}")
         return consumer
 
     def topic_health_check(self) -> Dict[str, Any]:
@@ -166,7 +177,8 @@ class KafkaManager:
             logger.error(f"Failed to delete topic {topic}: {e}")
             return False
 
-    def get_topic_offset(self, topic: str, partition: int = 0) -> Optional[int]:
+    def get_topic_offset(self, topic: str,
+                         partition: int = 0) -> Optional[int]:
         """
         Get current offset for a topic partition
 

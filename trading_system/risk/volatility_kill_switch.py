@@ -14,7 +14,8 @@ class KillSwitchConfig:
     nifty_gap_halt_pct: float = 2.0              # Kill if Nifty gaps > 2%
     intraday_move_halt_pct: float = 3.0          # Kill if intraday range > 3%
     consecutive_loss_halt: int = 3               # Kill after N consecutive losses
-    hourly_loss_pct_halt: float = 0.8            # Kill if hourly loss > 0.8% capital
+    # Kill if hourly loss > 0.8% capital
+    hourly_loss_pct_halt: float = 0.8
     circuit_breaker_halt: bool = True            # Auto-halt on NSE circuit
     us_market_crash_halt_pct: float = 2.5        # Kill if S&P500 drops > 2.5%
 
@@ -30,7 +31,8 @@ class VolatilityKillSwitch:
         self.config = config or KillSwitchConfig()
         if hasattr(self.config, "VIX_KILL_SWITCH_THRESHOLD"):
             # Map APEXConfig fields to KillSwitchConfig if available
-            self.config.india_vix_halt_threshold = getattr(self.config, "VIX_KILL_SWITCH_THRESHOLD", 30.0)
+            self.config.india_vix_halt_threshold = getattr(
+                self.config, "VIX_KILL_SWITCH_THRESHOLD", 30.0)
 
         self.is_active = False
         self.trigger_reason: Optional[str] = None
@@ -59,9 +61,11 @@ class VolatilityKillSwitch:
             self._hourly_pnl += pnl
             hourly_loss_pct = abs(self._hourly_pnl) / capital * 100
             if self._consecutive_losses >= self.config.consecutive_loss_halt:
-                self._activate(f"{self._consecutive_losses} consecutive losses")
+                self._activate(
+                    f"{self._consecutive_losses} consecutive losses")
             if hourly_loss_pct >= self.config.hourly_loss_pct_halt:
-                self._activate(f"Hourly loss {hourly_loss_pct:.2f}% exceeded limit")
+                self._activate(
+                    f"Hourly loss {hourly_loss_pct:.2f}% exceeded limit")
         else:
             self._consecutive_losses = 0
 
@@ -101,7 +105,8 @@ class VolatilityKillSwitch:
         return False, ""
 
     def _check_circuit_breaker(self, data: Dict) -> Tuple[bool, str]:
-        if self.config.circuit_breaker_halt and data.get("nse_circuit_breaker", False):
+        if self.config.circuit_breaker_halt and data.get(
+                "nse_circuit_breaker", False):
             return True, "NSE circuit breaker triggered"
         return False, ""
 

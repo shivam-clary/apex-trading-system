@@ -41,7 +41,11 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
             ("1d", "180d", "1d"),
         ]:
             try:
-                df = yf.download("^NSEI", period=period, interval=interval, progress=False)
+                df = yf.download(
+                    "^NSEI",
+                    period=period,
+                    interval=interval,
+                    progress=False)
                 df.columns = [c.lower() for c in df.columns]
                 data[tf] = df
             except Exception as e:
@@ -144,7 +148,8 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         else:
             return -0.2, f"Price in lower BB half (%B={b:.2f})"
 
-    def _supertrend_signal(self, df: pd.DataFrame, period: int = 10, multiplier: float = 3.0) -> Tuple[float, str]:
+    def _supertrend_signal(self, df: pd.DataFrame, period: int = 10,
+                           multiplier: float = 3.0) -> Tuple[float, str]:
         if len(df) < period + 1:
             return 0.0, "Insufficient Supertrend data"
         high = df["high"] if "high" in df.columns else df["High"]
@@ -172,9 +177,11 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
                     direction_arr.iloc[i] = 1 if curr_close > supertrend.iloc[i] else -1
                 else:
                     supertrend.iloc[i] = min(float(upper.iloc[i]), prev_st)
-                    direction_arr.iloc[i] = -1 if curr_close < supertrend.iloc[i] else 1
+                    direction_arr.iloc[i] = - \
+                        1 if curr_close < supertrend.iloc[i] else 1
         curr_dir = int(direction_arr.iloc[-1])
-        prev_dir = int(direction_arr.iloc[-2]) if len(direction_arr) > 1 else curr_dir
+        prev_dir = int(
+            direction_arr.iloc[-2]) if len(direction_arr) > 1 else curr_dir
         if curr_dir == 1 and prev_dir == -1:
             return 1.0, "Supertrend flipped BULLISH"
         elif curr_dir == -1 and prev_dir == 1:
@@ -198,7 +205,8 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         dm_minus = (-low.diff()).clip(lower=0)
         di_plus = 100 * dm_plus.rolling(14).mean() / atr14
         di_minus = 100 * dm_minus.rolling(14).mean() / atr14
-        dx = 100 * (di_plus - di_minus).abs() / (di_plus + di_minus).replace(0, np.nan)
+        dx = 100 * (di_plus - di_minus).abs() / \
+            (di_plus + di_minus).replace(0, np.nan)
         adx = dx.rolling(14).mean()
         adx_val = float(adx.iloc[-1]) if not adx.empty else 20
         di_p = float(di_plus.iloc[-1]) if not di_plus.empty else 20
@@ -216,7 +224,8 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         vol = df["volume"]
         close = df["close"] if "close" in df.columns else df["adj close"]
         vol_ma = vol.rolling(20).mean()
-        vol_ratio = float(vol.iloc[-1]) / float(vol_ma.iloc[-1]) if float(vol_ma.iloc[-1]) > 0 else 1.0
+        vol_ratio = float(
+            vol.iloc[-1]) / float(vol_ma.iloc[-1]) if float(vol_ma.iloc[-1]) > 0 else 1.0
         price_change = float(close.pct_change().iloc[-1])
         if vol_ratio > 1.5 and price_change > 0:
             return 0.8, f"High volume ({vol_ratio:.1f}x avg) on up move"
@@ -267,7 +276,8 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         if total_score > 0.30:
             direction = SignalDirection.STRONG_BUY if total_score > 0.55 else SignalDirection.BUY
         elif total_score < -0.30:
-            direction = SignalDirection.STRONG_SELL if total_score < -0.55 else SignalDirection.SELL
+            direction = SignalDirection.STRONG_SELL if total_score < - \
+                0.55 else SignalDirection.SELL
         else:
             direction = SignalDirection.NEUTRAL
             confidence = max(confidence, 0.2)

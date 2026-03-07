@@ -149,7 +149,10 @@ def fetch_rss_feed(name: str, url: str, cutoff: datetime) -> list[dict]:
         try:
             feed = feedparser.parse(url)
             if feed.bozo and not feed.entries:
-                log.warning("    Feed parse error for %s: %s", name, feed.bozo_exception)
+                log.warning(
+                    "    Feed parse error for %s: %s",
+                    name,
+                    feed.bozo_exception)
                 return []
             for entry in feed.entries:
                 published = parse_feed_entry_time(entry)
@@ -196,7 +199,8 @@ def fetch_rss_feed(name: str, url: str, cutoff: datetime) -> list[dict]:
         except Exception as exc:
             log.warning("    httpx fallback failed for %s: %s", name, exc)
     else:
-        log.error("Neither feedparser nor httpx available. pip install feedparser httpx")
+        log.error(
+            "Neither feedparser nor httpx available. pip install feedparser httpx")
 
     return articles
 
@@ -210,7 +214,9 @@ def aggregate_snapshot(articles: list[dict], lookback_hours: int) -> dict:
     bull_pct = round(len(bullish) / total * 100, 1) if total > 0 else 0.0
     bear_pct = round(len(bearish) / total * 100, 1) if total > 0 else 0.0
     neut_pct = round(len(neutral) / total * 100, 1) if total > 0 else 0.0
-    net_score = round((len(bullish) - len(bearish)) / total, 3) if total > 0 else 0.0
+    net_score = round(
+        (len(bullish) - len(bearish)) / total,
+        3) if total > 0 else 0.0
 
     if net_score > 0.2:
         overall_sentiment = "BULLISH"
@@ -221,7 +227,9 @@ def aggregate_snapshot(articles: list[dict], lookback_hours: int) -> dict:
 
     top = sorted(macro, key=lambda x: x["confidence"], reverse=True)[:10]
     if len(top) < 5:
-        top += sorted(articles, key=lambda x: x["confidence"], reverse=True)[:10 - len(top)]
+        top += sorted(articles,
+                      key=lambda x: x["confidence"],
+                      reverse=True)[:10 - len(top)]
 
     by_source: dict[str, list] = defaultdict(list)
     for a in articles:
@@ -233,7 +241,11 @@ def aggregate_snapshot(articles: list[dict], lookback_hours: int) -> dict:
         b = sum(1 for x in arts if x["sentiment"] == "BULLISH")
         br = sum(1 for x in arts if x["sentiment"] == "BEARISH")
         raw_counts[src] = len(arts)
-        feed_breakdown[src] = {"total": len(arts), "bullish": b, "bearish": br, "neutral": len(arts) - b - br}
+        feed_breakdown[src] = {
+            "total": len(arts),
+            "bullish": b,
+            "bearish": br,
+            "neutral": len(arts) - b - br}
 
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -261,7 +273,8 @@ def aggregate_snapshot(articles: list[dict], lookback_hours: int) -> dict:
 
 def write_to_redis(snapshot: dict) -> None:
     if not HAS_REDIS:
-        log.error("redis-py not installed. pip install redis. Skipping Redis write.")
+        log.error(
+            "redis-py not installed. pip install redis. Skipping Redis write.")
         return
     host = os.environ.get("REDIS_HOST", "localhost")
     port = int(os.environ.get("REDIS_PORT", "6379"))
@@ -271,15 +284,29 @@ def write_to_redis(snapshot: dict) -> None:
                             socket_connect_timeout=5, socket_timeout=5,
                             decode_responses=True)
         r.ping()
-        r.setex("WEEKEND_MACRO_SNAPSHOT", 72 * 3600, json.dumps(snapshot, ensure_ascii=False))
-        log.info("Redis write OK: WEEKEND_MACRO_SNAPSHOT (TTL=72h) -> %s:%s db%s", host, port, db)
+        r.setex(
+            "WEEKEND_MACRO_SNAPSHOT",
+            72 * 3600,
+            json.dumps(
+                snapshot,
+                ensure_ascii=False))
+        log.info(
+            "Redis write OK: WEEKEND_MACRO_SNAPSHOT (TTL=72h) -> %s:%s db%s",
+            host,
+            port,
+            db)
     except Exception as exc:
         log.error("Redis write FAILED: %s", exc)
 
 
 def write_to_file(snapshot: dict, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(
+            snapshot,
+            indent=2,
+            ensure_ascii=False),
+        encoding="utf-8")
     log.info("File write OK: %s", out_path)
 
 
@@ -306,23 +333,42 @@ def print_summary(snapshot: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="APEX Weekend Macro Sweep")
-    parser.add_argument("--dry-run", action="store_true", help="Skip Redis write")
-    parser.add_argument("--hours", type=int, default=48, help="Look-back window in hours (default: 48)")
-    parser.add_argument("--output", type=str, default="data/weekend_snapshot.json")
-    parser.add_argument("--feeds", nargs="+", choices=list(RSS_FEEDS.keys()) + ["all"], default=["all"])
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Skip Redis write")
+    parser.add_argument(
+        "--hours",
+        type=int,
+        default=48,
+        help="Look-back window in hours (default: 48)")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="data/weekend_snapshot.json")
+    parser.add_argument(
+        "--feeds",
+        nargs="+",
+        choices=list(
+            RSS_FEEDS.keys()) +
+        ["all"],
+        default=["all"])
     args = parser.parse_args()
 
     log.info("APEX Weekend Macro Sweep starting...")
-    log.info("  Lookback: %dh  |  Dry-run: %s  |  Output: %s", args.hours, args.dry_run, args.output)
+    log.info("  Lookback: %dh  |  Dry-run: %s  |  Output: %s",
+             args.hours, args.dry_run, args.output)
 
     if not HAS_FEEDPARSER and not HAS_HTTPX:
-        log.error("No HTTP library available. Install: pip install feedparser httpx")
+        log.error(
+            "No HTTP library available. Install: pip install feedparser httpx")
         sys.exit(1)
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=args.hours)
     log.info("  Cutoff: %s UTC", cutoff.strftime("%Y-%m-%d %H:%M"))
 
-    feeds_to_use = RSS_FEEDS if "all" in args.feeds else {k: v for k, v in RSS_FEEDS.items() if k in args.feeds}
+    feeds_to_use = RSS_FEEDS if "all" in args.feeds else {
+        k: v for k, v in RSS_FEEDS.items() if k in args.feeds}
     log.info("  Feeds: %d selected", len(feeds_to_use))
 
     all_articles: list[dict] = []
@@ -336,7 +382,10 @@ def main() -> None:
         except Exception as exc:
             log.warning("    [%s] failed: %s", name, exc)
 
-    log.info("Fetched %d total articles in %.1fs", len(all_articles), time.monotonic() - t0)
+    log.info(
+        "Fetched %d total articles in %.1fs",
+        len(all_articles),
+        time.monotonic() - t0)
 
     snapshot = aggregate_snapshot(all_articles, args.hours)
     print_summary(snapshot)

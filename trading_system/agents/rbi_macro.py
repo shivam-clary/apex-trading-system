@@ -31,11 +31,14 @@ class RBIIndianMacroAgent(APEXBaseAgent):
         try:
             usdinr = yf.Ticker("USDINR=X")
             hist = usdinr.history(period="30d")
-            data["usdinr"] = float(hist["Close"].iloc[-1]) if not hist.empty else 83.0
-            data["usdinr_1m_change"] = float(hist["Close"].pct_change().iloc[-1] * 100) if len(hist) > 1 else 0.0
+            data["usdinr"] = float(hist["Close"].iloc[-1]
+                                   ) if not hist.empty else 83.0
+            data["usdinr_1m_change"] = float(
+                hist["Close"].pct_change().iloc[-1] * 100) if len(hist) > 1 else 0.0
         except Exception:
             data["usdinr"] = 83.0
-        # Hardcode latest known macro data (would normally fetch from MOSPI/RBI API)
+        # Hardcode latest known macro data (would normally fetch from MOSPI/RBI
+        # API)
         data["repo_rate"] = 6.50
         data["cpi_latest"] = 5.1
         data["gdp_latest"] = 7.2
@@ -66,13 +69,16 @@ class RBIIndianMacroAgent(APEXBaseAgent):
         # CPI vs target
         if cpi > self.RBI_UPPER_BAND:
             score -= 0.4
-            key_factors.append(f"CPI {cpi:.1f}% above RBI upper band (hawkish pressure)")
+            key_factors.append(
+                f"CPI {cpi:.1f}% above RBI upper band (hawkish pressure)")
         elif cpi < self.RBI_LOWER_BAND:
             score += 0.3
-            key_factors.append(f"CPI {cpi:.1f}% below lower band (room to cut)")
+            key_factors.append(
+                f"CPI {cpi:.1f}% below lower band (room to cut)")
         elif cpi < self.RBI_TARGET_INFLATION:
             score += 0.2
-            key_factors.append(f"CPI {cpi:.1f}% below target (accommodative possible)")
+            key_factors.append(
+                f"CPI {cpi:.1f}% below target (accommodative possible)")
         else:
             key_factors.append(f"CPI {cpi:.1f}% within target band")
 

@@ -47,7 +47,8 @@ class BacktestEngine:
     def __init__(self, config: Optional[BacktestConfig] = None):
         self.config = config or BacktestConfig()
         self.slippage = SlippageCostSimulator(
-            BrokerageConfig(market_impact_bps=config.slippage_bps if config else 2.0)
+            BrokerageConfig(
+                market_impact_bps=config.slippage_bps if config else 2.0)
         )
 
     def run(
@@ -96,7 +97,8 @@ class BacktestEngine:
                     entry = open_trade["entry_price"]
                     multiplier = 1 if open_trade["direction"] == "LONG" else -1
                     gross_pnl = multiplier * (exit_price - entry) * qty
-                    cost = self.slippage.calculate_futures_cost(entry, qty, self.config.lot_size)
+                    cost = self.slippage.calculate_futures_cost(
+                        entry, qty, self.config.lot_size)
                     net_pnl = gross_pnl - cost["total_cost"]
                     capital += net_pnl
                     trade_rec = {
@@ -118,7 +120,8 @@ class BacktestEngine:
                     position_capital = capital * self.config.position_size_pct
                     qty = max(
                         self.config.lot_size,
-                        int(position_capital / close / self.config.lot_size) * self.config.lot_size,
+                        int(position_capital / close /
+                            self.config.lot_size) * self.config.lot_size,
                     )
                     open_trade = {
                         "direction": signal["direction"],
@@ -132,7 +135,8 @@ class BacktestEngine:
 
             equity_curve.append(capital)
 
-        return self._calculate_metrics(trades, equity_curve, self.config.initial_capital)
+        return self._calculate_metrics(
+            trades, equity_curve, self.config.initial_capital)
 
     def _calculate_metrics(
         self, trades: List[Dict], equity: List[float], initial_capital: float

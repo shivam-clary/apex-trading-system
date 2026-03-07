@@ -44,7 +44,8 @@ def main():
     st.sidebar.markdown("**Indian & Global AI Trading Intelligence**")
     auto_refresh = st.sidebar.checkbox("Auto-refresh (5s)", value=True)
     page = st.sidebar.selectbox(
-        "View", ["Dashboard", "Signals", "Portfolio", "Risk", "Performance", "Agents"]
+        "View", ["Dashboard", "Signals", "Portfolio",
+                 "Risk", "Performance", "Agents"]
     )
 
     if page == "Dashboard":
@@ -78,7 +79,10 @@ def _render_dashboard():
         st.metric("Capital", f"₹{portfolio.get('capital', 0):,.0f}")
     with col3:
         daily_pnl = portfolio.get("daily_pnl", 0)
-        st.metric("Daily P&L", f"₹{daily_pnl:,.0f}", delta=f"{daily_pnl:+,.0f}")
+        st.metric(
+            "Daily P&L",
+            f"₹{daily_pnl:,.0f}",
+            delta=f"{daily_pnl:+,.0f}")
     with col4:
         kill = risk.get("kill_switch_active", False)
         st.metric("Kill Switch", "ACTIVE ⚠️" if kill else "OFF ✅")

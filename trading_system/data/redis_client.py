@@ -141,7 +141,8 @@ class RedisClient:
             logger.error(f"Error getting signal: {e}")
             return None
 
-    async def get_all_signals_for_symbol(self, symbol: str) -> List[Dict[str, Any]]:
+    async def get_all_signals_for_symbol(
+            self, symbol: str) -> List[Dict[str, Any]]:
         """
         Get all agent signals for a symbol
 
@@ -275,7 +276,8 @@ class RedisClient:
             return 0
 
     # ===== PUB/SUB =====
-    async def publish_alert(self, channel: str, message: Dict[str, Any]) -> int:
+    async def publish_alert(
+            self, channel: str, message: Dict[str, Any]) -> int:
         """
         Publish alert message
 

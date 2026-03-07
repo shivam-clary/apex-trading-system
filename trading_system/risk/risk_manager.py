@@ -70,13 +70,15 @@ class RiskManagementAgent:
         return True, "APPROVED", sized_trade
 
     def _check_daily_loss_limit(self) -> Tuple[bool, str]:
-        daily_loss_pct = abs(min(self.state.daily_pnl, 0)) / self.state.capital * 100
+        daily_loss_pct = abs(min(self.state.daily_pnl, 0)
+                             ) / self.state.capital * 100
         if daily_loss_pct >= self.limits.max_daily_loss_pct:
             return False, f"Daily loss limit hit: {daily_loss_pct:.2f}% >= {self.limits.max_daily_loss_pct}%"
         return True, ""
 
     def _check_weekly_loss_limit(self) -> Tuple[bool, str]:
-        weekly_loss_pct = abs(min(self.state.weekly_pnl, 0)) / self.state.capital * 100
+        weekly_loss_pct = abs(min(self.state.weekly_pnl, 0)
+                              ) / self.state.capital * 100
         if weekly_loss_pct >= self.limits.max_weekly_loss_pct:
             return False, f"Weekly loss limit hit: {weekly_loss_pct:.2f}%"
         return True, ""
@@ -84,7 +86,8 @@ class RiskManagementAgent:
     def _check_max_drawdown(self) -> Tuple[bool, str]:
         if self.state.peak_capital == 0:
             return True, ""
-        drawdown_pct = (self.state.peak_capital - self.state.capital) / self.state.peak_capital * 100
+        drawdown_pct = (self.state.peak_capital -
+                        self.state.capital) / self.state.peak_capital * 100
         if drawdown_pct >= self.limits.max_drawdown_pct:
             return False, f"Max drawdown exceeded: {drawdown_pct:.2f}%"
         return True, ""
@@ -123,12 +126,19 @@ class RiskManagementAgent:
         if not entry or not stop or entry == stop:
             return trade
         risk_per_share = abs(entry - stop)
-        max_risk_capital = self.state.capital * (self.limits.max_single_trade_risk_pct / 100)
+        max_risk_capital = self.state.capital * \
+            (self.limits.max_single_trade_risk_pct / 100)
         quantity = math.floor(max_risk_capital / risk_per_share)
         lot_size = trade.get("lot_size", 1)
         if lot_size > 1:
-            quantity = max(lot_size, math.floor(quantity / lot_size) * lot_size)
-        return {**trade, "quantity": quantity, "risk_capital": quantity * risk_per_share}
+            quantity = max(
+                lot_size,
+                math.floor(
+                    quantity /
+                    lot_size) *
+                lot_size)
+        return {**trade, "quantity": quantity,
+                "risk_capital": quantity * risk_per_share}
 
     def update_pnl(self, trade_pnl: float):
         self.state.daily_pnl += trade_pnl

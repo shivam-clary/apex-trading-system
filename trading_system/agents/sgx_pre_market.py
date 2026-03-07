@@ -45,7 +45,8 @@ class SGXPreMarketAgent(APEXBaseAgent):
             else SignalDirection.NEUTRAL
         )
 
-        gap_pct = ((gift_nifty - nifty_prev_close) / nifty_prev_close * 100) if nifty_prev_close else 0
+        gap_pct = ((gift_nifty - nifty_prev_close) /
+                   nifty_prev_close * 100) if nifty_prev_close else 0
 
         return AgentSignal(
             agent_name=self.AGENT_NAME,
@@ -64,7 +65,8 @@ class SGXPreMarketAgent(APEXBaseAgent):
             },
         )
 
-    def _calculate_gap_score(self, gift_price: float, prev_close: float) -> float:
+    def _calculate_gap_score(self, gift_price: float,
+                             prev_close: float) -> float:
         if not prev_close or not gift_price:
             return 0.0
         gap_pct = (gift_price - prev_close) / prev_close * 100
@@ -112,9 +114,11 @@ class SGXPreMarketAgent(APEXBaseAgent):
                     "price": meta.get("regularMarketPrice", 0),
                     "prev_close": meta.get("previousClose", 0),
                     "change_pct": (
-                        (meta.get("regularMarketPrice", 0) - meta.get("previousClose", 0))
+                        (meta.get("regularMarketPrice", 0) -
+                         meta.get("previousClose", 0))
                         / meta.get("previousClose", 1) * 100
                     ),
                 }
             except Exception as e:
-                return {"price": 0, "prev_close": 0, "change_pct": 0, "error": str(e)}
+                return {"price": 0, "prev_close": 0,
+                        "change_pct": 0, "error": str(e)}

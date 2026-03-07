@@ -61,14 +61,18 @@ class OptionsDerivativesAgent(APEXBaseAgent):
             total_ce_oi += ce_oi
             total_pe_oi += pe_oi
             if ce.get("impliedVolatility"):
-                iv_data.append({"strike": strike, "type": "CE", "iv": ce["impliedVolatility"], "oi": ce_oi})
+                iv_data.append({"strike": strike, "type": "CE",
+                               "iv": ce["impliedVolatility"], "oi": ce_oi})
             if pe.get("impliedVolatility"):
-                iv_data.append({"strike": strike, "type": "PE", "iv": pe["impliedVolatility"], "oi": pe_oi})
+                iv_data.append({"strike": strike, "type": "PE",
+                               "iv": pe["impliedVolatility"], "oi": pe_oi})
 
         pcr = total_pe_oi / total_ce_oi if total_ce_oi > 0 else 1.0
         iv_df = pd.DataFrame(iv_data)
-        avg_call_iv = float(iv_df[iv_df["type"] == "CE"]["iv"].mean()) if not iv_df.empty else 15.0
-        avg_put_iv = float(iv_df[iv_df["type"] == "PE"]["iv"].mean()) if not iv_df.empty else 15.0
+        avg_call_iv = float(iv_df[iv_df["type"] == "CE"]
+                            ["iv"].mean()) if not iv_df.empty else 15.0
+        avg_put_iv = float(iv_df[iv_df["type"] == "PE"]
+                           ["iv"].mean()) if not iv_df.empty else 15.0
         put_call_iv_skew = avg_put_iv - avg_call_iv
 
         return {
@@ -99,13 +103,15 @@ class OptionsDerivativesAgent(APEXBaseAgent):
         # PCR interpretation
         if pcr > 1.5:
             score += 0.4
-            key_factors.append("PCR > 1.5: extreme put buying, contrarian bullish")
+            key_factors.append(
+                "PCR > 1.5: extreme put buying, contrarian bullish")
         elif pcr > 1.2:
             score += 0.2
             key_factors.append("PCR > 1.2: mild put bias, mildly bullish")
         elif pcr < 0.7:
             score -= 0.4
-            key_factors.append("PCR < 0.7: heavy call buying, contrarian bearish")
+            key_factors.append(
+                "PCR < 0.7: heavy call buying, contrarian bearish")
         elif pcr < 0.9:
             score -= 0.2
             key_factors.append("PCR < 0.9: call bias, mildly bearish")
@@ -113,10 +119,12 @@ class OptionsDerivativesAgent(APEXBaseAgent):
         # IV skew: positive skew = market fears downside
         if iv_skew > 3:
             score -= 0.25
-            key_factors.append(f"Positive IV skew {iv_skew:.1f}: downside fear")
+            key_factors.append(
+                f"Positive IV skew {iv_skew:.1f}: downside fear")
         elif iv_skew < -2:
             score += 0.25
-            key_factors.append(f"Negative IV skew {iv_skew:.1f}: upside demand")
+            key_factors.append(
+                f"Negative IV skew {iv_skew:.1f}: upside demand")
 
         confidence = min(abs(score) * 1.5, 0.85)
         if score > 0.25:

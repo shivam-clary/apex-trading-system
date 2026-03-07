@@ -94,7 +94,10 @@ class IndianNewsEventsAgent(APEXBaseAgent):
     def _score_corporate_actions(self, actions: List[Dict]) -> float:
         score = 0.0
         positive_actions = {"buyback", "dividend", "bonus", "split", "rights"}
-        negative_actions = {"pledge_increase", "promoter_sell", "block_deal_sell"}
+        negative_actions = {
+            "pledge_increase",
+            "promoter_sell",
+            "block_deal_sell"}
         for action in actions:
             action_type = action.get("type", "").lower()
             if any(pa in action_type for pa in positive_actions):

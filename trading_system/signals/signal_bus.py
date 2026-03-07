@@ -17,7 +17,8 @@ class InterAgentSignalBus:
 
     def __init__(self, redis_client=None):
         self.redis = redis_client
-        self._signals: Dict[str, AgentSignal] = {}  # agent_name -> latest signal
+        # agent_name -> latest signal
+        self._signals: Dict[str, AgentSignal] = {}
         self._subscribers: List[Callable] = []
         self._signal_history: List[Dict] = []
         self._lock = asyncio.Lock()
@@ -53,9 +54,12 @@ class InterAgentSignalBus:
         if not signals:
             return {"total": 0, "bullish": 0, "bearish": 0, "neutral": 0}
 
-        bullish = [s for s in signals if s.direction == SignalDirection.BULLISH]
-        bearish = [s for s in signals if s.direction == SignalDirection.BEARISH]
-        neutral = [s for s in signals if s.direction == SignalDirection.NEUTRAL]
+        bullish = [s for s in signals if s.direction ==
+                   SignalDirection.BULLISH]
+        bearish = [s for s in signals if s.direction ==
+                   SignalDirection.BEARISH]
+        neutral = [s for s in signals if s.direction ==
+                   SignalDirection.NEUTRAL]
 
         weighted_bull = sum(s.confidence * s.signal_weight for s in bullish)
         weighted_bear = sum(s.confidence * s.signal_weight for s in bearish)

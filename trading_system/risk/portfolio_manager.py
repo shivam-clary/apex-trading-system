@@ -21,14 +21,17 @@ class Position:
     lot_size: int = 1
     stop_loss: float = 0.0
     target: float = 0.0
-    entry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    entry_time: datetime = field(
+        default_factory=lambda: datetime.now(
+            timezone.utc))
     sector: str = "unknown"
     correlation_to_nifty: float = 0.8
 
     @property
     def unrealised_pnl(self) -> float:
         multiplier = 1 if self.direction == "LONG" else -1
-        return multiplier * (self.current_price - self.entry_price) * self.quantity
+        return multiplier * (self.current_price -
+                             self.entry_price) * self.quantity
 
     @property
     def pnl_pct(self) -> float:
@@ -63,7 +66,8 @@ class PortfolioManagementAgent:
         self.positions[pos.position_id] = pos
         return True, pos.position_id
 
-    def close_position(self, position_id: str, exit_price: float) -> Optional[Dict]:
+    def close_position(self, position_id: str,
+                       exit_price: float) -> Optional[Dict]:
         pos = self.positions.pop(position_id, None)
         if not pos:
             return None
@@ -92,7 +96,8 @@ class PortfolioManagementAgent:
                 pos.current_price = price_updates[pos.symbol]
 
     def get_portfolio_summary(self) -> Dict:
-        total_unrealised = sum(p.unrealised_pnl for p in self.positions.values())
+        total_unrealised = sum(
+            p.unrealised_pnl for p in self.positions.values())
         total_notional = sum(p.notional_value for p in self.positions.values())
         return {
             "capital": self.capital,
@@ -112,14 +117,17 @@ class PortfolioManagementAgent:
             ],
         }
 
-    def _check_sector_concentration(self, new_pos: Position) -> Tuple[bool, str]:
+    def _check_sector_concentration(
+            self, new_pos: Position) -> Tuple[bool, str]:
         sector_notional = sum(
             p.notional_value for p in self.positions.values()
             if p.sector == new_pos.sector
         )
-        total = sum(p.notional_value for p in self.positions.values()) or self.capital
+        total = sum(
+            p.notional_value for p in self.positions.values()) or self.capital
         new_notional = new_pos.current_price * new_pos.quantity
-        if (sector_notional + new_notional) / total > self.MAX_SECTOR_CONCENTRATION:
+        if (sector_notional + new_notional) / \
+                total > self.MAX_SECTOR_CONCENTRATION:
             return False, f"Sector concentration limit reached for {new_pos.sector}"
         return True, ""
 

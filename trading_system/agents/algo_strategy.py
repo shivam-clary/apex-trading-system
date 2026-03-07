@@ -93,10 +93,12 @@ class AlgoStrategyAgent(APEXBaseAgent):
         deviation = (price - vwap) / vwap if vwap else 0
         if deviation < -0.005:
             score = 25 + min(abs(deviation) * 1000, 30)
-            reasoning.append(f"Price {deviation*100:.2f}% below VWAP — mean reversion long")
+            reasoning.append(
+                f"Price {deviation*100:.2f}% below VWAP — mean reversion long")
         elif deviation > 0.005:
             score = -(25 + min(abs(deviation) * 1000, 30))
-            reasoning.append(f"Price {deviation*100:.2f}% above VWAP — mean reversion short")
+            reasoning.append(
+                f"Price {deviation*100:.2f}% above VWAP — mean reversion short")
         return {
             "name": "mean_reversion_vwap",
             "score": score,
@@ -132,10 +134,12 @@ class AlgoStrategyAgent(APEXBaseAgent):
         gap_pct = (open_price - prev_close) / prev_close if prev_close else 0
         if gap_pct > 0.005:
             score = -25
-            reasoning.append(f"Gap up {gap_pct*100:.2f}% — potential gap fill short")
+            reasoning.append(
+                f"Gap up {gap_pct*100:.2f}% — potential gap fill short")
         elif gap_pct < -0.005:
             score = 25
-            reasoning.append(f"Gap down {gap_pct*100:.2f}% — potential gap fill long")
+            reasoning.append(
+                f"Gap down {gap_pct*100:.2f}% — potential gap fill long")
         return {
             "name": "gap_fill",
             "score": score,
@@ -156,7 +160,8 @@ class AlgoStrategyAgent(APEXBaseAgent):
             reasoning.append(f"PCR {pcr:.2f} — contrarian bearish")
         if iv_rank < 20:
             score *= 0.5
-            reasoning.append("Low IV rank — option premium cheap, signal weakened")
+            reasoning.append(
+                "Low IV rank — option premium cheap, signal weakened")
         return {
             "name": "options_driven_directional",
             "score": score,
@@ -174,10 +179,12 @@ class AlgoStrategyAgent(APEXBaseAgent):
         if ema9 and ema21 and ema50:
             if ema9 > ema21 > ema50 and price > ema9:
                 score = 35
-                reasoning.append("Bullish EMA stack (9>21>50) with price above all")
+                reasoning.append(
+                    "Bullish EMA stack (9>21>50) with price above all")
             elif ema9 < ema21 < ema50 and price < ema9:
                 score = -35
-                reasoning.append("Bearish EMA stack (9<21<50) with price below all")
+                reasoning.append(
+                    "Bearish EMA stack (9<21<50) with price below all")
             elif ema9 > ema21:
                 score = 15
                 reasoning.append("Short-term bullish (EMA9 > EMA21)")
