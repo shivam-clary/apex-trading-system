@@ -23,13 +23,14 @@
     }
   },
   "ERROR_LOG": {
-    "ERL_001": {
+    "ERR_001": {
       "agent": "live-trade-performance-monitor",
       "error": "manage_memories serialization failure - Input should be an object",
       "trigger": "apex-live-performance-monitor-every-15-min",
       "impact": "PERFORMANCE_SNAPSHOT not persisted to memory (file fallback active)",
       "recurrence": 1,
       "fix_status": "RESOLVED",
+      "resolution": "Migrated from manage_memories to Upstash Redis REST API. All agents now write directly to DB1/DB2 via HTTPS REST. manage_memories removed from all agent prompts and recipes.",
       "timestamp": "2026-03-06T15:10:00Z",
       "fix_description": "BUG-A [CRITICAL]: Step 8 key typo. BUG-B [HIGH]: Step 9 fallback key typo. BUG-C [LOW]: Fixed double-t timestamp. BUG-D [LOW]: Removed leading space in Step 5.",
       "commit_hashes": [
@@ -37,7 +38,26 @@
         "7bc308b6231c4531ed8db9a08e5c34bdaa6738c3",
         "5e98a50d4258982c2df7e5920a40690a56a62e80"
       ],
-      "fix_timestamp": "2026-03-06T20:08:13Z"
+      "fix_timestamp": "2026-03-06T20:08:13Z",
+      "migration_commit": "6d4d02d821ddd7c96e3bf4ef4ae881bf14f14ce6",
+      "migration_date": "2026-03-09"
+    },
+    "ERR_002": {
+      "agent": "apex-sentiment-polling-agent",
+      "error": "manage_memories serialization - Input should be an object",
+      "trigger": "apex-sentiment-polling-every-5-min",
+      "impact": "SENTIMENT_SNAPSHOT not persisted to memory",
+      "recurrence": 1,
+      "fix_status": "RESOLVED",
+      "resolution": "Migrated from manage_memories to Upstash Redis REST API. All agents now write directly to DB1/DB2 via HTTPS REST. manage_memories removed from all agent prompts and recipes.",
+      "timestamp": "2026-03-06T22:22:20Z",
+      "fix_description": "Rewrote apex-sentiment-polling-agent prompt with pipe-delimited string output. Nebula orchestrator step handles manage_memories call.",
+      "commit_hashes": [
+        "b6455e61a0e94a386a889af35972c7fc627730ef"
+      ],
+      "fix_timestamp": "2026-03-07T02:27:00Z",
+      "migration_commit": "6d4d02d821ddd7c96e3bf4ef4ae881bf14f14ce6",
+      "migration_date": "2026-03-09"
     },
     "ERR_003": {
       "agent": "india-trading-central-command",
@@ -46,60 +66,45 @@
       "impact": "MARKET_STATE not persisted to memory for cycles 2 and 3 (FILE_FALLBACK active)",
       "recurrence": 3,
       "fix_status": "RESOLVED",
+      "resolution": "Migrated from manage_memories to Upstash Redis REST API. All agents now write directly to DB1/DB2 via HTTPS REST. manage_memories removed from all agent prompts and recipes.",
       "timestamp": "2026-03-06T20:49:00Z",
       "fix_description": "Execution #4: Full clean rewrite of india-trading-central-command.md. Fixed binary corruption in Steps 1/2/5 from prior commit 846ff62. Fixed DAILY_PNL key typo. Restored truncated Steps 6/7. All 7 steps clean with typed dict schemas. Root cause: prior fix wrote corrupted base64 causing garbled text in agent prompt.",
       "commit_hashes": [
         "846ff6247b910a7bd086d86bf396a0e473387874",
         "a0519370711aa46c54bbb4f598439a78733ed1da"
       ],
-      "fix_commit": "a0519370711aa46c54bbb4f598439a78733ed1da",
-      "fix_timestamp": "2026-03-06T21:10:37Z",
-      "fix_verified_at": "2026-03-07T00:01:00Z",
-      "fix_verified_by": "apex-validator"
+      "fix_commit": "aa32edc042ea2cfd4b71d846a614da624715bfe6",
+      "fix_timestamp": "2026-03-07T01:44:54Z",
+      "migration_commit": "6d4d02d821ddd7c96e3bf4ef4ae881bf14f14ce6",
+      "migration_date": "2026-03-09"
+    },
+    "ERR_004": {
+      "agent": "CI/CD",
+      "error": "CI build failed -- TA-Lib install step nested inside `with:` block of setup-python@v5",
+      "trigger": "github-actions/ci.yml",
+      "impact": "All CI runs failing since commit 8b1d593",
+      "recurrence": 9,
+      "fix_status": "PENDING",
+      "timestamp": "2026-03-07T06:56:53Z",
+      "fix_description": "Ready to push: move TA-Lib install step out of `with:` block in .github/workflows/ci.yml. Blocked by GitHub OAuth write connection failure.",
+      "file_sha": "23875db6e76e9c6187f672994aa7e606b45fb3ef"
     }
   },
-  "HEALTH_STATUS": {
-    "overall": "RECOVERING",
-    "agents": {
-      "india-trading-central-command": "VERIFIED",
-      "live-trade-performance-monitor": "HEALTHY",
-      "signal-generator": "HEALTHY",
-      "risk-veto": "HEALTHY",
-      "dhan-executor": "HEALTHY"
-    },
-    "last_updated": "2026-03-07T00:01:00Z"
-  },
-  "FIX_HISTORY": [
+  "migrations": [
     {
-      "fix_id": "FIX_001",
-      "error_id": "ERL_001",
-      "agent": "live-trade-performance-monitor",
-      "timestamp": "2026-03-06T20:08:13Z",
-      "commit": "5e98a50d4258982c2df7e5920a40690a56a62e80",
-      "description": "Fixed PERFORMANCE_SNAPSHOT key typo and object-only manage_memories enforcement.",
-      "status": "VERIFIED"
-    },
-    {
-      "fix_id": "FIX_002",
-      "error_id": "ERR_003",
-      "agent": "india-trading-central-command",
-      "timestamp": "2026-03-06T20:18:23Z",
-      "commit": "846ff6247b910a7bd086d86bf396a0e473387874",
-      "description": "Added 7-step typed workflow to india-trading-central-command. Commit introduced binary corruption in steps 1/2/5 and DAILY_PNL key typo -- superseded by FIX_003.",
-      "status": "SUPERSEDED"
-    },
-    {
-      "fix_id": "FIX_003",
-      "error_id": "ERR_003",
-      "agent": "india-trading-central-command",
-      "timestamp": "2026-03-06T21:10:37Z",
-      "commit": "a0519370711aa46c54bbb4f598439a78733ed1da",
-      "description": "Full clean rewrite: fixed binary corruption in Steps 1/2/5, fixed DAILY_PNL typo, restored Steps 6/7, clean Memory Key Schemas table, updated Serialization Guard Rule. All 9 content checks pass.",
-      "status": "VERIFIED",
-      "verified_at": "2026-03-07T00:01:00Z",
-      "verified_by": "apex-validator",
-      "verification_checks": "15/15",
-      "recurrences_since_fix": 0
+      "id": "MIGRATION_001",
+      "date": "2026-03-09",
+      "title": "Upstash Redis Universal State Store",
+      "description": "Migrated all 19 APEX agents (13 NSE equity + 6 Forex) and 5 recipe TASK.md files from manage_memories (Nebula platform) to Upstash Redis REST API. Root cause: manage_memories fails with JSON serialization error in trigger execution contexts. New architecture: agents write pipe-delimited strings directly to DB1 (live state) or DB2 (intelligence) via HTTPS REST. No redis-py required. See docs/UPSTASH_MEMORY_GUIDE.md.",
+      "files_changed": [
+        "trading_system/core/apex_redis.py",
+        "docs/UPSTASH_MEMORY_GUIDE.md",
+        "docs/MEMORY_SCHEMA.md",
+        "agents/*.md (19 files)",
+        "tasks/*.md (5 files)",
+        "data/APEX_STATE.json"
+      ],
+      "status": "COMPLETE"
     }
   ]
 }
