@@ -145,31 +145,41 @@ class RiskManagementAgent:
             if val:
                 kelly_fraction = float(val)
         
+        # Kelly-adjusted risk percentage
         risk_pct = min(
             (self.limits.max_single_trade_risk_pct * kelly_fraction) / 100,
             self.limits.max_portfolio_risk_pct / 100 / max(len(self.state.open_positions), 1),
         )
         
         sl = abs(trade.get("entry_price", 1) - trade.get("stop_loss", 0))
-        qty = int((capital * risk_pct) / max(sl, 1))
+        calculated_qty = int((capital * risk_pct) / max(sl, 1))
         
-        quantity = max(qty, lot_size) # Default to at least 1 lot
+        # Lot Size Adjustment
+        lot_size = self._get_lot_size(trade.get("symbol", ""))
         
         # MANDATORY 1-LOT CAP (User Request: "trade only 1 lot... 30 qty")
+        # Logic: If Kelly suggests 0, we do 0. If Kelly suggests >= 1 lot, we cap at exactly 1 lot.
         if "BANK" in trade.get("symbol", "").upper():
-            quantity = lot_size # Force exactly 1 lot
-        
+            if calculated_qty >= lot_size:
+                quantity = lot_size # Cap at exactly 1 lot
+            elif calculated_qty > 0:
+                quantity = lot_size # Scale up to min 1 lot if Kelly gives any signal
+            else:
+                quantity = 0        # Don't trade if Kelly says 0 (too risky)
+        else:
+            # For non-banking, use standard rounding to lot size
+            quantity = (calculated_qty // lot_size) * lot_size if calculated_qty >= lot_size else 0
+
         # Smart Funds Check
-        if self.executor:
+        if self.executor and quantity > 0:
             funds = self.executor.get_fund_limits()
             available = float(funds.get("equity", {}).get("net", 0))
-            estimated_margin = trade.get("entry_price", 0) * quantity
-            if estimated_margin > available:
-                # Scale down if funds insufficient
-                if available > (trade.get("entry_price", 0) * lot_size):
-                    quantity = lot_size # drop to min 1 lot
-                else:
-                    quantity = 0 # Cannot afford even 1 lot
+            # Rough estimate per unit
+            margin_per_unit = trade.get("entry_price", 0) 
+            # For options selling, this estimation is low, but Dhan API handles the final rejection.
+            # We just do a sanity check here.
+            if (margin_per_unit * quantity) > available:
+                quantity = 0 # Cannot afford even 1 lot
                     
         return {**trade, "quantity": quantity}
 
