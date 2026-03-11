@@ -41,11 +41,13 @@ class MasterDecisionMakerAgent:
         self.learning_engine = kwargs.get("learning_engine")
         self.tradable_symbols = ["NIFTY BANK", "BSE BANKEX"]
         self._decision_history: list = []
+        self._reversal_counter: Dict[str, int] = {} # Tracks sustained reversals
+        self._persistence_threshold = 2 # Requires 2 consecutive checks (~30s) to be a "Real" reversal
 
     async def monitor_open_positions(self, positions: Dict[str, Any], market_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Scans open positions and flags those that are 'unsafe' due to consensus reversal.
-        Returns a list of symbols to exit immediately.
+        Implements PERSISTENCE CHECK to filter out 'Fake' signals/noise.
         """
         exits = []
         signals = self.bus.get_all_signals()
@@ -59,25 +61,34 @@ class MasterDecisionMakerAgent:
             symbol = pos.symbol
             direction = pos.direction # LONG or SHORT
             
-            # CONSENSUS REVERSAL: If we are LONG but consensus is strongly BEARISH
+            # Detect potential reversal
+            is_reversing = False
+            reversal_reason = ""
+
+            # Check for Reversal Logic
             if direction == "LONG" and consensus.final_direction == SignalDirection.BEARISH:
                 if consensus.consensus_score > STRONG_THRESHOLD:
-                    exits.append({
-                        "symbol": symbol,
-                        "position_id": pos_id,
-                        "reason": f"UNSAFE: Strong Bearish Reversal ({consensus.consensus_score:.2f})"
-                    })
-            
-            # If we are SHORT but consensus is strongly BULLISH
+                    is_reversing = True
+                    reversal_reason = f"Strong Bearish Reversal ({consensus.consensus_score:.2f})"
             elif direction == "SHORT" and consensus.final_direction == SignalDirection.BULLISH:
                 if consensus.consensus_score > STRONG_THRESHOLD:
+                    is_reversing = True
+                    reversal_reason = f"Strong Bullish Reversal ({consensus.consensus_score:.2f})"
+
+            # Persistence Check: Filter out Fakes/Noise
+            if is_reversing:
+                self._reversal_counter[pos_id] = self._reversal_counter.get(pos_id, 0) + 1
+                if self._reversal_counter[pos_id] >= self._persistence_threshold:
                     exits.append({
                         "symbol": symbol,
                         "position_id": pos_id,
-                        "reason": f"UNSAFE: Strong Bullish Reversal ({consensus.consensus_score:.2f})"
+                        "reason": f"UNSAFE: Sustained {reversal_reason}"
                     })
+            else:
+                # Reset counter if the reversal disappears (it was a fake/noise)
+                self._reversal_counter[pos_id] = 0
                     
-            # VOLATILITY EXIT: If Kill Switch triggered
+            # VOLATILITY EXIT: If Kill Switch triggered (immediate, no persistence check)
             halted, halt_reason = self.kill_switch.check(market_data)
             if halted:
                 exits.append({
