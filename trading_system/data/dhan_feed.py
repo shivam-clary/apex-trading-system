@@ -105,28 +105,68 @@ class DhanDataFeed:
     def disconnect(self) -> None:
         """Stop the WebSocket feed."""
         self._running = False
-        if self._feed:
-            try:
-                self._feed.disconnect()
-            except Exception:
-                pass
+        # Note: The _run thread will detect self._running=False and 
+        # await self._feed.disconnect() internally in its own event loop.
         logger.info("DhanDataFeed disconnected")
 
     def _run(self) -> None:
         """Internal thread target - sets up the DhanHQ feed and runs it."""
         try:
+            # Note: DhanHQ library v2 doesn't use callbacks in constructor.
+            # It requires polling get_data() or running an event loop.
+            
+            # 1. Start Event Loop in this thread
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            # 2. Format subscriptions for DhanFeed
+            # DhanFeed expects a list of (exchange_segment, security_id, mode)
+            # or it uses the list provided in constructor.
+            instruments = []
+            segment_map = {
+                "NSE_EQ": 1,
+                "NSE_FNO": 2,
+                "BSE_EQ": 4,
+                "MCX_COMM": 5,
+                "BSE_FNO": 8
+            }
+            
+            for seg_name, sec_id, mode in self._subscriptions:
+                seg_code = segment_map.get(seg_name, 2)
+                instruments.append((seg_code, str(sec_id), mode))
+
             self._feed = marketfeed.DhanFeed(
                 client_id=self.client_id,
                 access_token=self.access_token,
-                on_tick=self._on_tick,
-                on_order_update=self._on_order_update,
-                on_connect=self._on_connect,
-                on_disconnect=self._on_disconnect,
-                on_error=self._on_error,
+                instruments=instruments,
+                version='v2'
             )
-            self._feed.run()
+            
+            # 3. Connection & Callback Logic
+            async def run_logic():
+                await self._feed.connect()
+                self._on_connect()
+                
+                while self._running:
+                    try:
+                        data = await self._feed.get_instrument_data()
+                        if data:
+                            self._on_tick(data)
+                    except Exception as e:
+                        if self._running:
+                            logger.error(f"Dhan Feed Error: {e}")
+                            self._on_error(e)
+                            await asyncio.sleep(1)
+                
+                await self._feed.disconnect()
+                self._on_disconnect()
+
+            loop.run_until_complete(run_logic())
+            
         except Exception as e:
-            logger.error(f"DhanFeed run error: {e}")
+            logger.error(f"DhanFeed initialization error: {e}")
+            self._on_error(e)
 
     # ------------------------------------------------------------------
     # Internal event handlers
