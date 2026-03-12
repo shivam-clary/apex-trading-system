@@ -32,11 +32,11 @@ class OptionsDerivativesAgent(APEXBaseAgent):
             try:
                 await client.get("https://www.nseindia.com", timeout=10)
                 resp = await client.get(
-                    "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY",
+                    "https://www.nseindia.com/api/option-chain-indices?symbol=BANKNIFTY",
                     timeout=10,
                 )
                 if resp.status_code == 200:
-                    data["nifty_chain"] = resp.json()
+                    data["banknifty_chain"] = resp.json()
             except Exception as e:
                 self.logger.warning(f"NSE options fetch failed: {e}")
         return data
@@ -87,9 +87,9 @@ class OptionsDerivativesAgent(APEXBaseAgent):
 
     async def analyze(self) -> AgentSignal:
         data = await self._fetch_data()
-        chain = data.get("nifty_chain")
+        chain = data.get("banknifty_chain")
         if not chain:
-            return self._no_signal("NSE options chain unavailable")
+            return self._no_signal("NSE options chain (BANKNIFTY) unavailable")
 
         parsed = self._parse_chain(chain)
         if not parsed:
@@ -138,8 +138,8 @@ class OptionsDerivativesAgent(APEXBaseAgent):
         return self._make_signal(
             direction=direction,
             confidence=confidence,
-            symbol="NIFTY 50",
-            reasoning=f"Options chain analysis: PCR={pcr:.2f}, IV Skew={iv_skew:.2f}",
+            symbol="NIFTY BANK",
+            reasoning=f"Options chain analysis (BANKNIFTY): PCR={pcr:.2f}, IV Skew={iv_skew:.2f}",
             key_factors=key_factors,
             timeframe=SignalTimeframe.INTRADAY,
             asset_class=AssetClass.OPTIONS,

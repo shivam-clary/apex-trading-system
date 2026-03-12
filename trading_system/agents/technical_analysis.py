@@ -42,7 +42,7 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         ]:
             try:
                 df = yf.download(
-                    "^NSEI",
+                    "^NSEBANK",
                     period=period,
                     interval=interval,
                     progress=False)
@@ -285,7 +285,7 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         return self._make_signal(
             direction=direction,
             confidence=confidence,
-            symbol="NIFTY 50",
+            symbol="NIFTY BANK",
             reasoning=f"Multi-TF technical score={total_score:.3f}",
             key_factors=all_factors[:6],
             timeframe=SignalTimeframe.INTRADAY,
