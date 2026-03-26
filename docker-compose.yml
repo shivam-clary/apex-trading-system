@@ -81,10 +81,7 @@ services:
     logging: *default-logging
 
   app:
-    build:
-      context: .
-      dockerfile: infrastructure/Dockerfile
-    image: apex-trading:latest
+    image: shivamjhaclary/apex-trading-system:latest
     container_name: apex-app
     restart: unless-stopped
     networks:
