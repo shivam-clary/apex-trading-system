@@ -19,7 +19,6 @@ services:
 
   kafka:
     image: apache/kafka:3.9.2
-    container_name: apex-kafka
     hostname: kafka
     restart: unless-stopped
     networks:
@@ -56,7 +55,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: apex-redis
     restart: unless-stopped
     networks:
       - apex-net
@@ -82,7 +80,6 @@ services:
 
   app:
     image: shivamjhaclary/apex-trading-system:latest
-    container_name: apex-app
     restart: unless-stopped
     networks:
       - apex-net
