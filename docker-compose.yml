@@ -112,12 +112,4 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
-    deploy:
-      resources:
-        limits:
-          memory: 4g
-          cpus: "2.0"
-        reservations:
-          memory: 1g
-          cpus: "0.5"
     logging: *default-logging
