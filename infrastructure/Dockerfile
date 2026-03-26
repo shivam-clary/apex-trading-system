@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN wget -q http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz \
     && tar -xzf ta-lib-0.4.0-src.tar.gz \
     && cd ta-lib \
+    && wget -q -O config.guess "https://git.savannah.gnu.org/cgit/config.git/plain/config.guess" \
+    && wget -q -O config.sub "https://git.savannah.gnu.org/cgit/config.git/plain/config.sub" \
+    && chmod +x config.guess config.sub \
     && ./configure --prefix=/usr \
     && make \
     && make install \

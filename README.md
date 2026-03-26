@@ -84,3 +84,37 @@ All alerts route to sujaysn6@gmail.com via Gmail (AWS SES replaced).
 - [APEX CRITICAL] = 3+ consecutive failures or persistent errors
 - EOD Digest = daily P&L + positions
 - Evolution Report = weekly learning summary
+
+## Docker Image Build and Push (Dokploy/Swarm)
+
+From repo root (`/home/shivam/dev/apex-trading-system`):
+
+1. Login to Docker Hub:
+   ```bash
+   docker login
+   ```
+
+2. Build production image:
+   ```bash
+   docker build -f infrastructure/Dockerfile -t shivamjhaclary/apex-trading-system:latest .
+   ```
+
+3. Push image:
+   ```bash
+   docker push shivamjhaclary/apex-trading-system:latest
+   ```
+
+Optional (recommended) version tag:
+
+```bash
+docker tag shivamjhaclary/apex-trading-system:latest shivamjhaclary/apex-trading-system:2026-03-26
+docker push shivamjhaclary/apex-trading-system:2026-03-26
+```
+
+Verify local tags:
+
+```bash
+docker images | grep apex-trading-system
+```
+
+After push, redeploy in Dokploy so Docker Swarm pulls the updated image.
