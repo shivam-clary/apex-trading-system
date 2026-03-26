@@ -20,6 +20,7 @@ services:
   kafka:
     image: apache/kafka:3.9.2
     container_name: apex-kafka
+    hostname: kafka
     restart: unless-stopped
     networks:
       - apex-net
@@ -27,7 +28,7 @@ services:
       # KRaft mode — no ZooKeeper required
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       CLUSTER_ID: "apex-trading-kraft-cluster01"
       # Listeners
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
