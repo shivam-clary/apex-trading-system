@@ -6,10 +6,8 @@ x-logging: &default-logging
 
 networks:
   apex-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
+    driver: overlay
+    attachable: true
 
 volumes:
   redis-data:
