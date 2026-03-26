@@ -3,13 +3,19 @@ APEX Agent 4: TechnicalAnalysisAgent
 Multi-timeframe technical analysis using pandas_ta.
 Indicators: EMA, RSI, MACD, Bollinger Bands, Supertrend, ADX, Ichimoku.
 """
+
 from __future__ import annotations
 from typing import Dict, Any, Tuple
 import numpy as np
 import pandas as pd
 
 from ..core.base_agent import APEXBaseAgent
-from ..core.signal_schema import AgentSignal, SignalDirection, SignalTimeframe, AssetClass
+from ..core.signal_schema import (
+    AgentSignal,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
+)
 
 
 class TechnicalAnalysisAgent(APEXBaseAgent):
@@ -33,6 +39,7 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
 
     async def _fetch_data(self) -> Dict[str, Any]:
         import yfinance as yf
+
         data = {}
         for tf, period, interval in [
             ("5m", "1d", "5m"),
@@ -42,10 +49,8 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         ]:
             try:
                 df = yf.download(
-                    "^NSEBANK",
-                    period=period,
-                    interval=interval,
-                    progress=False)
+                    "^NSEBANK", period=period, interval=interval, progress=False
+                )
                 df.columns = [c.lower() for c in df.columns]
                 data[tf] = df
             except Exception as e:
@@ -148,17 +153,19 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         else:
             return -0.2, f"Price in lower BB half (%B={b:.2f})"
 
-    def _supertrend_signal(self, df: pd.DataFrame, period: int = 10,
-                           multiplier: float = 3.0) -> Tuple[float, str]:
+    def _supertrend_signal(
+        self, df: pd.DataFrame, period: int = 10, multiplier: float = 3.0
+    ) -> Tuple[float, str]:
         if len(df) < period + 1:
             return 0.0, "Insufficient Supertrend data"
         high = df["high"] if "high" in df.columns else df["High"]
         low = df["low"] if "low" in df.columns else df["Low"]
         close = df["close"] if "close" in df.columns else df["Close"]
         hl2 = (high + low) / 2
-        tr = pd.concat([high - low,
-                        (high - close.shift()).abs(),
-                        (low - close.shift()).abs()], axis=1).max(axis=1)
+        tr = pd.concat(
+            [high - low, (high - close.shift()).abs(), (low - close.shift()).abs()],
+            axis=1,
+        ).max(axis=1)
         atr = tr.rolling(period).mean()
         upper = hl2 + multiplier * atr
         lower = hl2 - multiplier * atr
@@ -177,11 +184,9 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
                     direction_arr.iloc[i] = 1 if curr_close > supertrend.iloc[i] else -1
                 else:
                     supertrend.iloc[i] = min(float(upper.iloc[i]), prev_st)
-                    direction_arr.iloc[i] = - \
-                        1 if curr_close < supertrend.iloc[i] else 1
+                    direction_arr.iloc[i] = -1 if curr_close < supertrend.iloc[i] else 1
         curr_dir = int(direction_arr.iloc[-1])
-        prev_dir = int(
-            direction_arr.iloc[-2]) if len(direction_arr) > 1 else curr_dir
+        prev_dir = int(direction_arr.iloc[-2]) if len(direction_arr) > 1 else curr_dir
         if curr_dir == 1 and prev_dir == -1:
             return 1.0, "Supertrend flipped BULLISH"
         elif curr_dir == -1 and prev_dir == 1:
@@ -197,16 +202,16 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         high = df["high"] if "high" in df.columns else df["High"]
         low = df["low"] if "low" in df.columns else df["Low"]
         close = df["close"] if "close" in df.columns else df["Close"]
-        tr = pd.concat([high - low,
-                        (high - close.shift()).abs(),
-                        (low - close.shift()).abs()], axis=1).max(axis=1)
+        tr = pd.concat(
+            [high - low, (high - close.shift()).abs(), (low - close.shift()).abs()],
+            axis=1,
+        ).max(axis=1)
         atr14 = tr.rolling(14).mean()
         dm_plus = high.diff().clip(lower=0)
         dm_minus = (-low.diff()).clip(lower=0)
         di_plus = 100 * dm_plus.rolling(14).mean() / atr14
         di_minus = 100 * dm_minus.rolling(14).mean() / atr14
-        dx = 100 * (di_plus - di_minus).abs() / \
-            (di_plus + di_minus).replace(0, np.nan)
+        dx = 100 * (di_plus - di_minus).abs() / (di_plus + di_minus).replace(0, np.nan)
         adx = dx.rolling(14).mean()
         adx_val = float(adx.iloc[-1]) if not adx.empty else 20
         di_p = float(di_plus.iloc[-1]) if not di_plus.empty else 20
@@ -224,8 +229,11 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
         vol = df["volume"]
         close = df["close"] if "close" in df.columns else df["adj close"]
         vol_ma = vol.rolling(20).mean()
-        vol_ratio = float(
-            vol.iloc[-1]) / float(vol_ma.iloc[-1]) if float(vol_ma.iloc[-1]) > 0 else 1.0
+        vol_ratio = (
+            float(vol.iloc[-1]) / float(vol_ma.iloc[-1])
+            if float(vol_ma.iloc[-1]) > 0
+            else 1.0
+        )
         price_change = float(close.pct_change().iloc[-1])
         if vol_ratio > 1.5 and price_change > 0:
             return 0.8, f"High volume ({vol_ratio:.1f}x avg) on up move"
@@ -235,7 +243,7 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
             return 0.0, f"Low volume ({vol_ratio:.1f}x avg), weak conviction"
         return 0.0, f"Normal volume ({vol_ratio:.1f}x avg)"
 
-    async def analyze(self) -> AgentSignal:
+    async def analyze(self, market_data=None) -> AgentSignal:
         data = await self._fetch_data()
         if not data:
             return self._no_signal("No market data available")
@@ -274,10 +282,17 @@ class TechnicalAnalysisAgent(APEXBaseAgent):
 
         confidence = min(abs(total_score) * 1.5, 0.92)
         if total_score > 0.30:
-            direction = SignalDirection.STRONG_BUY if total_score > 0.55 else SignalDirection.BUY
+            direction = (
+                SignalDirection.STRONG_BUY
+                if total_score > 0.55
+                else SignalDirection.BUY
+            )
         elif total_score < -0.30:
-            direction = SignalDirection.STRONG_SELL if total_score < - \
-                0.55 else SignalDirection.SELL
+            direction = (
+                SignalDirection.STRONG_SELL
+                if total_score < -0.55
+                else SignalDirection.SELL
+            )
         else:
             direction = SignalDirection.NEUTRAL
             confidence = max(confidence, 0.2)

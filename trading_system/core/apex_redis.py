@@ -39,28 +39,31 @@ from urllib.parse import quote
 # Configuration
 # ---------------------------------------------------------------------------
 
-_DB1_URL   = os.environ.get("UPSTASH_REDIS_REST_URL", "https://desired-stud-34827.upstash.io")
-_DB1_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "AYgLAAIncDI0Nzk4NmI2OWIwODE0MGY1YjAwNWIzZTVlYzkyNjcwYnAyMzQ4Mjc")
-_DB2_URL   = os.environ.get("UPSTASH_REDIS_REST_URL_DB2", "https://precious-mallard-35072.upstash.io")
-_DB2_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN_DB2", "AYkAAAIncDI0MzA5NDllYjM2NWM0ODgyOThlYTMwNDY5NzljZWRjNHAyMzUwNzI")
+_DB1_URL = os.environ.get("UPSTASH_REDIS_REST_URL", "")
+_DB1_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
+_DB2_URL = os.environ.get("UPSTASH_REDIS_REST_URL_DB2", "")
+_DB2_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN_DB2", "")
 
-_MAX_RETRIES   = 3
+_MAX_RETRIES = 3
 _RETRY_DELAY_S = 1.5
-_TIMEOUT_S     = 10
+_TIMEOUT_S = 10
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _headers(token):
     return {
         "Authorization": f"Bearer {token}",
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
     }
+
 
 def _safe_key(key):
     return quote(key, safe="")
+
 
 def _http_get(url, token):
     req = Request(url, headers=_headers(token), method="GET")
@@ -71,18 +74,25 @@ def _http_get(url, token):
                 return body.get("result")
         except HTTPError as e:
             if attempt == _MAX_RETRIES:
-                print(f"[apex_redis] GET failed after {_MAX_RETRIES} attempts: HTTP {e.code} — {url}")
+                print(
+                    f"[apex_redis] GET failed after {_MAX_RETRIES} attempts: HTTP {e.code} — {url}"
+                )
                 return None
         except (URLError, OSError) as e:
             if attempt == _MAX_RETRIES:
-                print(f"[apex_redis] GET failed after {_MAX_RETRIES} attempts: {e} — {url}")
+                print(
+                    f"[apex_redis] GET failed after {_MAX_RETRIES} attempts: {e} — {url}"
+                )
                 return None
         time.sleep(_RETRY_DELAY_S)
     return None
 
+
 def _http_set(base_url, token, key, value, ttl=None):
     if not isinstance(value, str):
-        print(f"[apex_redis] WRITE REJECTED — value must be plain string, got {type(value).__name__} for key={key}")
+        print(
+            f"[apex_redis] WRITE REJECTED — value must be plain string, got {type(value).__name__} for key={key}"
+        )
         return False
     # Use Upstash pipeline endpoint: POST /pipeline with [["SET", key, value, "EX", ttl]]
     url = f"{base_url.rstrip('/')}/pipeline"
@@ -98,11 +108,15 @@ def _http_set(base_url, token, key, value, ttl=None):
                 return body[0].get("result") == "OK"
         except HTTPError as e:
             if attempt == _MAX_RETRIES:
-                print(f"[apex_redis] SET failed after {_MAX_RETRIES} attempts: HTTP {e.code} — key={key}")
+                print(
+                    f"[apex_redis] SET failed after {_MAX_RETRIES} attempts: HTTP {e.code} — key={key}"
+                )
                 return False
         except (URLError, OSError) as e:
             if attempt == _MAX_RETRIES:
-                print(f"[apex_redis] SET failed after {_MAX_RETRIES} attempts: {e} — key={key}")
+                print(
+                    f"[apex_redis] SET failed after {_MAX_RETRIES} attempts: {e} — key={key}"
+                )
                 return False
         time.sleep(_RETRY_DELAY_S)
     return False
@@ -112,6 +126,7 @@ def _http_set(base_url, token, key, value, ttl=None):
 # Public API — DB1 (Live State)
 # ---------------------------------------------------------------------------
 
+
 def read_state(key: str):
     """Read a key from DB1 (live runtime state). Returns string or None."""
     if not _DB1_URL:
@@ -119,6 +134,7 @@ def read_state(key: str):
         return None
     url = f"{_DB1_URL}/get/{_safe_key(key)}"
     return _http_get(url, _DB1_TOKEN)
+
 
 def write_state(key: str, value: str, ttl: int = None) -> bool:
     """Write a key to DB1 (live runtime state). value MUST be a plain string."""
@@ -132,6 +148,7 @@ def write_state(key: str, value: str, ttl: int = None) -> bool:
 # Public API — DB2 (Intelligence)
 # ---------------------------------------------------------------------------
 
+
 def read_intelligence(key: str):
     """Read a key from DB2 (intelligence/analytics). Returns string or None."""
     if not _DB2_URL:
@@ -140,12 +157,14 @@ def read_intelligence(key: str):
     url = f"{_DB2_URL}/get/{_safe_key(key)}"
     return _http_get(url, _DB2_TOKEN)
 
+
 def write_intelligence(key: str, value: str, ttl: int = None) -> bool:
     """Write a key to DB2 (intelligence/analytics). value MUST be a plain string."""
     if not _DB2_URL:
         print("[apex_redis] UPSTASH_REDIS_REST_URL_DB2 not set (and no DB1 fallback)")
         return False
     return _http_set(_DB2_URL, _DB2_TOKEN, key, value, ttl)
+
 
 def is_error_resolved(error_code: str) -> bool:
     """Check if an error code is marked as PERMANENTLY_RESOLVED in Redis."""
@@ -160,8 +179,10 @@ def is_error_resolved(error_code: str) -> bool:
 # Object Adapters for unified interface
 # ---------------------------------------------------------------------------
 
+
 class UpstashRestAdapter:
     """Minimal adapter to provide get/set interface over Upstash REST."""
+
     def __init__(self, base_url, token):
         self.base_url = base_url
         self.token = token
@@ -173,8 +194,10 @@ class UpstashRestAdapter:
     async def set(self, key, value, ex=None):
         return _http_set(self.base_url, self.token, key, value, ttl=ex)
 
+
 def get_live_db():
     return UpstashRestAdapter(_DB1_URL, _DB1_TOKEN)
+
 
 def get_intelligence_db():
     return UpstashRestAdapter(_DB2_URL, _DB2_TOKEN)
@@ -184,9 +207,11 @@ def get_intelligence_db():
 # Bulk helpers
 # ---------------------------------------------------------------------------
 
+
 def read_many_state(keys: list) -> dict:
     """Read multiple keys from DB1. Returns {key: value_or_None}."""
     return {k: read_state(k) for k in keys}
+
 
 def read_many_intelligence(keys: list) -> dict:
     """Read multiple keys from DB2. Returns {key: value_or_None}."""
@@ -196,6 +221,7 @@ def read_many_intelligence(keys: list) -> dict:
 # ---------------------------------------------------------------------------
 # Diagnostics
 # ---------------------------------------------------------------------------
+
 
 def ping() -> dict:
     """

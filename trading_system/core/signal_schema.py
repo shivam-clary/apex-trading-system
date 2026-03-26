@@ -4,9 +4,10 @@ Core Signal Schema — Standardized format for all 20 agent signals.
 Every agent publishes signals in this exact format.
 The Master Decision Maker consumes only this schema.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Dict, Any, List
 import json
@@ -32,11 +33,11 @@ SHORT = SignalDirection.SELL
 
 
 class SignalTimeframe(str, Enum):
-    INTRADAY = "INTRADAY"     # same-day exit
-    SHORT_TERM = "SHORT_TERM"   # 1-3 days
-    SWING = "SWING"        # 2-5 days
-    POSITIONAL = "POSITIONAL"   # 1-4 weeks
-    LONG_TERM = "LONG_TERM"    # months
+    INTRADAY = "INTRADAY"  # same-day exit
+    SHORT_TERM = "SHORT_TERM"  # 1-3 days
+    SWING = "SWING"  # 2-5 days
+    POSITIONAL = "POSITIONAL"  # 1-4 weeks
+    LONG_TERM = "LONG_TERM"  # months
 
 
 class AssetClass(str, Enum):
@@ -63,26 +64,28 @@ class AgentSignal:
     """
     Single agent signal — the atomic unit of the APEX signal bus.
     """
+
     # Identity
     signal_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     agent_name: str = ""
     agent_version: str = "1.0.0"
     timestamp: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat())
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
     # Core Signal
     direction: SignalDirection = SignalDirection.NO_SIGNAL
-    confidence: float = 0.0          # 0.0 – 1.0
+    confidence: float = 0.0  # 0.0 – 1.0
     timeframe: SignalTimeframe = SignalTimeframe.INTRADAY
     asset_class: AssetClass = AssetClass.EQUITY
-    signal_weight: float = 1.0          # default weight
+    signal_weight: float = 1.0  # default weight
 
     # Target Instrument
-    symbol: str = ""           # e.g. "NIFTY 50", "RELIANCE", "GOLD"
+    symbol: str = ""  # e.g. "NIFTY 50", "RELIANCE", "GOLD"
     exchange: str = "NSE"
-    expiry: Optional[str] = None         # for F&O
+    expiry: Optional[str] = None  # for F&O
     strike: Optional[float] = None
-    option_type: Optional[str] = None         # CE / PE
+    option_type: Optional[str] = None  # CE / PE
 
     # Price Context
     entry_price: Optional[float] = None
@@ -105,10 +108,10 @@ class AgentSignal:
     nifty_level: Optional[float] = None
 
     # Signal Health
-    data_freshness_seconds: int = 0            # how old is the data
+    data_freshness_seconds: int = 0  # how old is the data
     # recent accuracy of this agent
     model_accuracy_30d: Optional[float] = None
-    is_override: bool = False        # manual override flag
+    is_override: bool = False  # manual override flag
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -132,9 +135,7 @@ class AgentSignal:
     @property
     def is_actionable(self) -> bool:
         return (
-            self.direction not in (
-                SignalDirection.NO_SIGNAL,
-                SignalDirection.NEUTRAL)
+            self.direction not in (SignalDirection.NO_SIGNAL, SignalDirection.NEUTRAL)
             and self.confidence >= 0.40
             and self.data_freshness_seconds < 300
         )
@@ -145,9 +146,11 @@ class AgentSignal:
         direction_map = {
             SignalDirection.STRONG_BUY: 1.0,
             SignalDirection.BUY: 0.6,
+            SignalDirection.BULLISH: 0.8,
             SignalDirection.NEUTRAL: 0.0,
             SignalDirection.SELL: -0.6,
             SignalDirection.STRONG_SELL: -1.0,
+            SignalDirection.BEARISH: -0.8,
             SignalDirection.NO_SIGNAL: 0.0,
         }
         return self.confidence * direction_map[self.direction]
@@ -159,15 +162,20 @@ class ConsensusDecision:
     Output of the MasterDecisionMaker — the final trade decision
     synthesized from all 20 agent signals.
     """
+
     decision_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat())
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
     # Decision
     final_direction: SignalDirection = SignalDirection.NO_SIGNAL
-    consensus_score: float = 0.0          # weighted aggregate
-    confidence_level: str = "LOW"        # LOW / MEDIUM / HIGH / VERY_HIGH
+    consensus_score: float = 0.0  # weighted aggregate
+    confidence_level: str = "LOW"  # LOW / MEDIUM / HIGH / VERY_HIGH
     execute_trade: bool = False
+
+    # Reasoning
+    reasoning: str = ""
 
     # Instrument
     symbol: str = ""

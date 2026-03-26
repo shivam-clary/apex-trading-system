@@ -3,12 +3,18 @@ APEX Agent 10: FIIDIIFlowAgent
 Tracks FII/DII buying/selling in cash and F&O markets.
 FII flows are the single biggest driver of Indian market direction.
 """
+
 from __future__ import annotations
 from typing import Dict, Any
 import pandas as pd
 
 from ..core.base_agent import APEXBaseAgent
-from ..core.signal_schema import AgentSignal, SignalDirection, SignalTimeframe, AssetClass
+from ..core.signal_schema import (
+    AgentSignal,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
+)
 
 
 class FIIDIIFlowAgent(APEXBaseAgent):
@@ -23,10 +29,9 @@ class FIIDIIFlowAgent(APEXBaseAgent):
 
     async def _fetch_data(self) -> Dict[str, Any]:
         import httpx
+
         data = {}
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept-Language": "en-US,en;q=0.9"}
+        headers = {"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US,en;q=0.9"}
         async with httpx.AsyncClient(headers=headers, timeout=15.0) as client:
             try:
                 await client.get("https://www.nseindia.com", timeout=10)
@@ -43,33 +48,43 @@ class FIIDIIFlowAgent(APEXBaseAgent):
     def _analyze_flows(self, flow_data) -> Dict[str, Any]:
         if not flow_data:
             return {}
-        rows = flow_data if isinstance(
-            flow_data, list) else flow_data.get(
-            "data", [])
+        rows = flow_data if isinstance(flow_data, list) else flow_data.get("data", [])
         if not rows:
             return {}
         df = pd.DataFrame(rows)
         latest = df.iloc[0] if not df.empty else {}
-        fii_net = float(str(latest.get("FII_NET", "0")).replace(
-            ",", "")) if latest.get("FII_NET") else 0.0
-        dii_net = float(str(latest.get("DII_NET", "0")).replace(
-            ",", "")) if latest.get("DII_NET") else 0.0
+        fii_net = (
+            float(str(latest.get("FII_NET", "0")).replace(",", ""))
+            if latest.get("FII_NET")
+            else 0.0
+        )
+        dii_net = (
+            float(str(latest.get("DII_NET", "0")).replace(",", ""))
+            if latest.get("DII_NET")
+            else 0.0
+        )
         # 5-day rolling
         fii_5d = 0.0
         dii_5d = 0.0
         try:
-            fii_col = [float(str(r.get("FII_NET", "0")).replace(",", ""))
-                       for r in rows[:5]]
-            dii_col = [float(str(r.get("DII_NET", "0")).replace(",", ""))
-                       for r in rows[:5]]
+            fii_col = [
+                float(str(r.get("FII_NET", "0")).replace(",", "")) for r in rows[:5]
+            ]
+            dii_col = [
+                float(str(r.get("DII_NET", "0")).replace(",", "")) for r in rows[:5]
+            ]
             fii_5d = sum(fii_col)
             dii_5d = sum(dii_col)
         except Exception:
             pass
-        return {"fii_net_today": fii_net, "dii_net_today": dii_net,
-                "fii_5d": fii_5d, "dii_5d": dii_5d}
+        return {
+            "fii_net_today": fii_net,
+            "dii_net_today": dii_net,
+            "fii_5d": fii_5d,
+            "dii_5d": dii_5d,
+        }
 
-    async def analyze(self) -> AgentSignal:
+    async def analyze(self, market_data=None) -> AgentSignal:
         data = await self._fetch_data()
         flows = self._analyze_flows(data.get("fii_dii"))
         if not flows:

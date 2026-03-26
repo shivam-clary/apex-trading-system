@@ -1,13 +1,15 @@
 """Performance metrics calculator for backtest results."""
+
 from __future__ import annotations
 import math
 import numpy as np
-from typing import Dict, List
-from . import BacktestResult
+from typing import Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .engine import BacktestResult
 
 
 class PerformanceMetrics:
-
     @staticmethod
     def calculate(
         trades: List[Dict], equity_curve: List[float], initial_capital: float
@@ -18,12 +20,10 @@ class PerformanceMetrics:
             return BacktestResult(equity_curve=equity_curve)
 
         final_capital = equity_curve[-1]
-        total_return_pct = (
-            final_capital - initial_capital) / initial_capital * 100
+        total_return_pct = (final_capital - initial_capital) / initial_capital * 100
         n_bars = len(equity_curve)
         n_years = n_bars / (252 * 375)  # approx 375 1-min bars per day
-        cagr = ((final_capital / initial_capital) **
-                (1 / max(n_years, 0.01)) - 1) * 100
+        cagr = ((final_capital / initial_capital) ** (1 / max(n_years, 0.01)) - 1) * 100
 
         # Drawdown
         peak = initial_capital
@@ -50,18 +50,16 @@ class PerformanceMetrics:
         eq_arr = np.array(equity_curve)
         daily_rets = np.diff(eq_arr) / eq_arr[:-1]
         sharpe = (
-            np.mean(daily_rets) /
-            np.std(daily_rets) *
-            math.sqrt(
-                252 *
-                375)) if np.std(daily_rets) > 0 else 0
+            (np.mean(daily_rets) / np.std(daily_rets) * math.sqrt(252 * 375))
+            if np.std(daily_rets) > 0
+            else 0
+        )
         downside = daily_rets[daily_rets < 0]
         sortino = (
-            np.mean(daily_rets) /
-            np.std(downside) *
-            math.sqrt(
-                252 *
-                375)) if len(downside) > 1 and np.std(downside) > 0 else 0
+            (np.mean(daily_rets) / np.std(downside) * math.sqrt(252 * 375))
+            if len(downside) > 1 and np.std(downside) > 0
+            else 0
+        )
         calmar = cagr / max_dd if max_dd > 0 else 0
 
         # Consecutive wins/losses

@@ -3,6 +3,7 @@ APEX Agent 1: IndianMarketDataAgent
 Ingests real-time NSE/BSE data via Zerodha Kite WebSocket.
 Produces signals based on price action, volume, breadth, and market internals.
 """
+
 from __future__ import annotations
 import asyncio
 import logging
@@ -16,12 +17,19 @@ import numpy as np
 
 from ..core.base_agent import APEXBaseAgent
 from ..core.signal_schema import (
-    AgentSignal, SignalDirection, SignalTimeframe,
-    AssetClass, MarketRegime
+    AgentSignal,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
+    MarketRegime,
 )
 from ..core.constants import (
-    NSE_OPEN_TIME, NSE_CLOSE_TIME, NIFTY50_SYMBOL,
-    BANKNIFTY_SYMBOL, TIMEFRAME_5M, TIMEFRAME_15M
+    NSE_OPEN_TIME,
+    NSE_CLOSE_TIME,
+    NIFTY50_SYMBOL,
+    BANKNIFTY_SYMBOL,
+    TIMEFRAME_5M,
+    TIMEFRAME_15M,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,6 +55,7 @@ class IndianMarketDataAgent(APEXBaseAgent):
         """Fetch OHLCV data from Kite REST API."""
         try:
             from kiteconnect import KiteConnect
+
             kite = KiteConnect(api_key=self.config.kite_api_key)
             kite.set_access_token(self.config.kite_access_token)
 
@@ -68,6 +77,7 @@ class IndianMarketDataAgent(APEXBaseAgent):
     async def _fetch_yahoo_fallback(self) -> Dict[str, Any]:
         """Yahoo Finance fallback for Nifty and banking benchmarks."""
         import yfinance as yf
+
         nifty = yf.download("^NSEI", period="1d", interval="5m", progress=False)
         banknifty = yf.download("^NSEBANK", period="1d", interval="5m", progress=False)
         bankex = yf.download("^BSEBANK", period="1d", interval="5m", progress=False)
@@ -91,7 +101,9 @@ class IndianMarketDataAgent(APEXBaseAgent):
         return {
             "advance_decline_ratio": float(adr),
             "advancing_pct": float(advancing / total) if total else 0.5,
-            "momentum_5": float(close.pct_change(5).iloc[-1]) if len(close) > 5 else 0.0,
+            "momentum_5": float(close.pct_change(5).iloc[-1])
+            if len(close) > 5
+            else 0.0,
         }
 
     def _compute_vwap(self, df: pd.DataFrame) -> float:
@@ -109,7 +121,9 @@ class IndianMarketDataAgent(APEXBaseAgent):
         except Exception:
             return 0.0
 
-    def _score_price_action(self, df: pd.DataFrame, symbol: str) -> tuple[SignalDirection, float, str]:
+    def _score_price_action(
+        self, df: pd.DataFrame, symbol: str
+    ) -> tuple[SignalDirection, float, str]:
         """Score price action using EMA crossover + VWAP + RSI."""
         if df is None or df.empty or len(df) < 20:
             return SignalDirection.NO_SIGNAL, 0.0, "Insufficient data"
@@ -133,7 +147,11 @@ class IndianMarketDataAgent(APEXBaseAgent):
 
         # EMA crossover
         ema_bullish = float(ema9.iloc[-1]) > float(ema21.iloc[-1])
-        ema_prev_bullish = float(ema9.iloc[-2]) > float(ema21.iloc[-2]) if len(ema9) > 1 else ema_bullish
+        ema_prev_bullish = (
+            float(ema9.iloc[-2]) > float(ema21.iloc[-2])
+            if len(ema9) > 1
+            else ema_bullish
+        )
 
         # Scoring
         score = 0.0
@@ -152,25 +170,25 @@ class IndianMarketDataAgent(APEXBaseAgent):
             score -= 0.15
             factors.append("EMA9 < EMA21 (downtrend)")
 
-        if current_rsi > 60:
-            score += 0.20
-            factors.append(f"RSI={current_rsi:.1f} bullish")
-        elif current_rsi < 40:
-            score -= 0.20
-            factors.append(f"RSI={current_rsi:.1f} bearish")
-        elif current_rsi > 70:
+        if current_rsi > 70:
             score -= 0.10
             factors.append(f"RSI={current_rsi:.1f} overbought")
+        elif current_rsi > 60:
+            score += 0.20
+            factors.append(f"RSI={current_rsi:.1f} bullish")
         elif current_rsi < 30:
             score += 0.10
             factors.append(f"RSI={current_rsi:.1f} oversold")
+        elif current_rsi < 40:
+            score -= 0.20
+            factors.append(f"RSI={current_rsi:.1f} bearish")
 
         if vwap_deviation > 0.003:
             score += 0.15
-            factors.append(f"Price above VWAP by {vwap_deviation*100:.2f}%")
+            factors.append(f"Price above VWAP by {vwap_deviation * 100:.2f}%")
         elif vwap_deviation < -0.003:
             score -= 0.15
-            factors.append(f"Price below VWAP by {abs(vwap_deviation)*100:.2f}%")
+            factors.append(f"Price below VWAP by {abs(vwap_deviation) * 100:.2f}%")
 
         reasoning = f"{symbol} analysis: " + "; ".join(factors)
         if score >= 0.45:
@@ -190,17 +208,33 @@ class IndianMarketDataAgent(APEXBaseAgent):
         banknifty_df = data.get("banknifty")
         bankex_df = data.get("bankex")
 
-        nifty_dir, nifty_conf, nifty_reason = self._score_price_action(nifty_df, "NIFTY50")
-        bank_dir, bank_conf, bank_reason = self._score_price_action(banknifty_df, "BANKNIFTY")
-        bankex_dir, bankex_conf, bankex_reason = self._score_price_action(bankex_df, "BANKEX")
-        
+        nifty_dir, nifty_conf, nifty_reason = self._score_price_action(
+            nifty_df, "NIFTY50"
+        )
+        bank_dir, bank_conf, bank_reason = self._score_price_action(
+            banknifty_df, "BANKNIFTY"
+        )
+        bankex_dir, bankex_conf, bankex_reason = self._score_price_action(
+            bankex_df, "BANKEX"
+        )
+
         breadth = self._compute_market_breadth(banknifty_df)
 
         # Pick the strongest banking signal
         if bankex_conf > bank_conf:
-            final_dir, final_conf, final_reason, final_symbol = bankex_dir, bankex_conf, bankex_reason, "BSE BANKEX"
+            final_dir, final_conf, final_reason, final_symbol = (
+                bankex_dir,
+                bankex_conf,
+                bankex_reason,
+                "BSE BANKEX",
+            )
         else:
-            final_dir, final_conf, final_reason, final_symbol = bank_dir, bank_conf, bank_reason, "NIFTY BANK"
+            final_dir, final_conf, final_reason, final_symbol = (
+                bank_dir,
+                bank_conf,
+                bank_reason,
+                "NIFTY BANK",
+            )
 
         current_price = None
         target_df = bankex_df if final_symbol == "BSE BANKEX" else banknifty_df
@@ -214,8 +248,9 @@ class IndianMarketDataAgent(APEXBaseAgent):
             symbol=final_symbol,
             reasoning=f"Banking Sector focus: {final_reason} ({final_symbol}) | Nifty context: {nifty_reason}",
             key_factors=[
-                final_reason, nifty_reason,
-                f"Banking Breadth={breadth.get('advancing_pct', 0.5)*100:.1f}%",
+                final_reason,
+                nifty_reason,
+                f"Banking Breadth={breadth.get('advancing_pct', 0.5) * 100:.1f}%",
             ],
             current_price=current_price,
             timeframe=SignalTimeframe.INTRADAY,

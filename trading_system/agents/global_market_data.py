@@ -2,12 +2,24 @@
 APEX Agent 2: GlobalMarketDataAgent
 Monitors US/EU/Asian markets and measures correlation with Indian markets.
 """
+
 from __future__ import annotations
 from typing import Dict, Any
 
 from ..core.base_agent import APEXBaseAgent
-from ..core.signal_schema import AgentSignal, SignalDirection, SignalTimeframe, AssetClass
-from ..core.constants import SP500_SYMBOL, NASDAQ_SYMBOL, NIKKEI_SYMBOL, HANGSENG_SYMBOL, DAX_SYMBOL
+from ..core.signal_schema import (
+    AgentSignal,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
+)
+from ..core.constants import (
+    SP500_SYMBOL,
+    NASDAQ_SYMBOL,
+    NIKKEI_SYMBOL,
+    HANGSENG_SYMBOL,
+    DAX_SYMBOL,
+)
 
 
 class GlobalMarketDataAgent(APEXBaseAgent):
@@ -43,6 +55,7 @@ class GlobalMarketDataAgent(APEXBaseAgent):
 
     async def _fetch_data(self) -> Dict[str, Any]:
         import yfinance as yf
+
         results = {}
         for name, symbol in self.GLOBAL_SYMBOLS.items():
             try:
@@ -51,15 +64,19 @@ class GlobalMarketDataAgent(APEXBaseAgent):
                 if not hist.empty:
                     results[name] = {
                         "close": float(hist["Close"].iloc[-1]),
-                        "prev_close": float(hist["Close"].iloc[-2]) if len(hist) > 1 else None,
+                        "prev_close": float(hist["Close"].iloc[-2])
+                        if len(hist) > 1
+                        else None,
                         "change_pct": float(hist["Close"].pct_change().iloc[-1] * 100),
-                        "5d_return": float((hist["Close"].iloc[-1] / hist["Close"].iloc[0] - 1) * 100),
+                        "5d_return": float(
+                            (hist["Close"].iloc[-1] / hist["Close"].iloc[0] - 1) * 100
+                        ),
                     }
             except Exception as e:
                 self.logger.warning(f"Failed to fetch {name} ({symbol}): {e}")
         return results
 
-    async def analyze(self) -> AgentSignal:
+    async def analyze(self, market_data=None) -> AgentSignal:
         data = await self._fetch_data()
         if not data:
             return self._no_signal("No global market data available")
@@ -84,7 +101,8 @@ class GlobalMarketDataAgent(APEXBaseAgent):
         if india_vix and india_vix > 25:
             bullish_score *= 0.6
             key_factors.append(
-                f"India VIX={india_vix:.1f} (elevated, reducing confidence)")
+                f"India VIX={india_vix:.1f} (elevated, reducing confidence)"
+            )
         if us_vix and us_vix > 30:
             bullish_score *= 0.5
             key_factors.append(f"US VIX={us_vix:.1f} (fear, strong reduction)")
@@ -93,9 +111,15 @@ class GlobalMarketDataAgent(APEXBaseAgent):
         confidence = min(abs(normalized) * 5, 0.90)
 
         if normalized > 0.015:
-            direction = SignalDirection.STRONG_BUY if confidence > 0.65 else SignalDirection.BUY
+            direction = (
+                SignalDirection.STRONG_BUY if confidence > 0.65 else SignalDirection.BUY
+            )
         elif normalized < -0.015:
-            direction = SignalDirection.STRONG_SELL if confidence > 0.65 else SignalDirection.SELL
+            direction = (
+                SignalDirection.STRONG_SELL
+                if confidence > 0.65
+                else SignalDirection.SELL
+            )
         else:
             direction = SignalDirection.NEUTRAL
             confidence = 0.3
@@ -104,8 +128,8 @@ class GlobalMarketDataAgent(APEXBaseAgent):
             direction=direction,
             confidence=confidence,
             symbol="NIFTY 50",
-            reasoning=f"Global markets weighted signal: score={normalized:.4f}. " + "; ".join(
-                key_factors[:4]),
+            reasoning=f"Global markets weighted signal: score={normalized:.4f}. "
+            + "; ".join(key_factors[:4]),
             key_factors=key_factors,
             india_vix=india_vix,
             supporting_data=data,

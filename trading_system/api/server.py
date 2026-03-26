@@ -2,6 +2,7 @@
 FastAPI Control Plane — REST API + WebSocket streaming for the APEX Trading System.
 Provides live system state, signal feeds, portfolio updates, and manual override controls.
 """
+
 from __future__ import annotations
 import asyncio
 import json
@@ -11,6 +12,8 @@ from typing import Dict, List, Optional
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from .routes import router as extended_router
 
 
 # ---- WebSocket manager ----
@@ -68,11 +71,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(extended_router)
+
     # ---- Routes ----
     @app.get("/health")
     async def health():
-        return {"status": "ok", "timestamp": datetime.now(
-            timezone.utc).isoformat()}
+        return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
     @app.get("/api/v1/system/status")
     async def system_status(request: Request):
@@ -89,22 +93,44 @@ def create_app() -> FastAPI:
     async def get_latest_signals(request: Request):
         orch = getattr(request.app.state, "orchestrator", None)
         if not orch:
-            return {"signals": [], "summary": {"bullish": 0, "bearish": 0, "neutral": 0}}
-        
+            return {
+                "signals": [],
+                "summary": {"bullish": 0, "bearish": 0, "neutral": 0},
+            }
+
         signals = orch.signal_bus.get_all_signals()
         signal_list = [
             {
                 "agent": name,
                 "direction": s.direction.value,
                 "confidence": s.confidence,
-                "reason": s.reason,
-                "timestamp": s.timestamp
-            } for name, s in signals.items()
+                "reason": s.reasoning,
+                "timestamp": s.timestamp,
+            }
+            for name, s in signals.items()
         ]
-        
-        bullish = len([s for s in signals.values() if s.direction.value == "BULLISH"])
-        bearish = len([s for s in signals.values() if s.direction.value == "BEARISH"])
-        neutral = len([s for s in signals.values() if s.direction.value in ["NEUTRAL", "NO_SIGNAL", "FLAT"]])
+
+        bullish = len(
+            [
+                s
+                for s in signals.values()
+                if s.direction.value in ("BULLISH", "BUY", "STRONG_BUY")
+            ]
+        )
+        bearish = len(
+            [
+                s
+                for s in signals.values()
+                if s.direction.value in ("BEARISH", "SELL", "STRONG_SELL")
+            ]
+        )
+        neutral = len(
+            [
+                s
+                for s in signals.values()
+                if s.direction.value in ["NEUTRAL", "NO_SIGNAL"]
+            ]
+        )
 
         return {
             "signals": signal_list,
@@ -117,7 +143,7 @@ def create_app() -> FastAPI:
         orch = getattr(request.app.state, "orchestrator", None)
         if not orch:
             return {"capital": 0, "open_positions": [], "daily_pnl": 0}
-            
+
         summary = orch.portfolio_manager.get_portfolio_summary()
         return {
             "capital": summary["capital"],
@@ -197,7 +223,9 @@ def create_app() -> FastAPI:
         try:
             while True:
                 await asyncio.sleep(1)
-                await websocket.send_json({"type": "heartbeat", "ts": datetime.now(timezone.utc).isoformat()})
+                await websocket.send_json(
+                    {"type": "heartbeat", "ts": datetime.now(timezone.utc).isoformat()}
+                )
         except WebSocketDisconnect:
             manager.disconnect(websocket)
 

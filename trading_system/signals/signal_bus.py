@@ -2,6 +2,7 @@
 InterAgentSignalBus — collects signals from all 20 agents, normalises them,
 and broadcasts the aggregated view to the MasterDecisionMaker.
 """
+
 from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
@@ -27,12 +28,14 @@ class InterAgentSignalBus:
         """Agent calls this to publish its signal."""
         async with self._lock:
             self._signals[signal.agent_name] = signal
-            self._signal_history.append({
-                "agent": signal.agent_name,
-                "direction": signal.direction.value,
-                "confidence": signal.confidence,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            self._signal_history.append(
+                {
+                    "agent": signal.agent_name,
+                    "direction": signal.direction.value,
+                    "confidence": signal.confidence,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
             if len(self._signal_history) > 1000:
                 self._signal_history = self._signal_history[-500:]
 
@@ -54,12 +57,31 @@ class InterAgentSignalBus:
         if not signals:
             return {"total": 0, "bullish": 0, "bearish": 0, "neutral": 0}
 
-        bullish = [s for s in signals if s.direction ==
-                   SignalDirection.BULLISH]
-        bearish = [s for s in signals if s.direction ==
-                   SignalDirection.BEARISH]
-        neutral = [s for s in signals if s.direction ==
-                   SignalDirection.NEUTRAL]
+        bullish = [
+            s
+            for s in signals
+            if s.direction
+            in (
+                SignalDirection.BULLISH,
+                SignalDirection.BUY,
+                SignalDirection.STRONG_BUY,
+            )
+        ]
+        bearish = [
+            s
+            for s in signals
+            if s.direction
+            in (
+                SignalDirection.BEARISH,
+                SignalDirection.SELL,
+                SignalDirection.STRONG_SELL,
+            )
+        ]
+        neutral = [
+            s
+            for s in signals
+            if s.direction in (SignalDirection.NEUTRAL, SignalDirection.NO_SIGNAL)
+        ]
 
         weighted_bull = sum(s.confidence * s.signal_weight for s in bullish)
         weighted_bear = sum(s.confidence * s.signal_weight for s in bearish)

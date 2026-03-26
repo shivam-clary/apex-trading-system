@@ -1,5 +1,3 @@
-version: "3.9"
-
 x-logging: &default-logging
   driver: "json-file"
   options:
@@ -16,60 +14,45 @@ networks:
 volumes:
   redis-data:
   kafka-data:
-  zookeeper-data:
-  zookeeper-log:
   apex-logs:
   apex-data:
 
 services:
 
-  zookeeper:
-    image: bitnami/zookeeper:3.9
-    container_name: apex-zookeeper
-    restart: unless-stopped
-    networks:
-      - apex-net
-    environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
-      ZOO_LOG_LEVEL: WARN
-    volumes:
-      - zookeeper-data:/bitnami/zookeeper/data
-      - zookeeper-log:/bitnami/zookeeper/log
-    healthcheck:
-      test: ["CMD", "zkServer.sh", "status"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    logging: *default-logging
-
   kafka:
-    image: bitnami/kafka:3.6
+    image: apache/kafka:3.9.2
     container_name: apex-kafka
     restart: unless-stopped
     networks:
       - apex-net
-    depends_on:
-      zookeeper:
-        condition: service_healthy
     environment:
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_CFG_NUM_PARTITIONS: 3
-      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
-      KAFKA_CFG_LOG_RETENTION_HOURS: 48
-      KAFKA_CFG_LOG_SEGMENT_BYTES: 536870912
-      ALLOW_PLAINTEXT_LISTENER: "yes"
+      # KRaft mode — no ZooKeeper required
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      CLUSTER_ID: "apex-trading-kraft-cluster01"
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Topic defaults
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: "3"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      # Retention
+      KAFKA_LOG_RETENTION_HOURS: "48"
+      KAFKA_LOG_SEGMENT_BYTES: "536870912"
     volumes:
-      - kafka-data:/bitnami/kafka/data
+      - kafka-data:/tmp/kraft-combined-logs
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions.sh", "--bootstrap-server", "kafka:9092"]
-      interval: 20s
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 15s
       timeout: 10s
-      retries: 6
-      start_period: 60s
+      retries: 8
+      start_period: 45s
     logging: *default-logging
 
   redis:
@@ -121,9 +104,9 @@ services:
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: /app
     ports:
-      - "8000:8000"
-      - "8501:8501"
-      - "80:80"
+      - "8080:8000"
+      - "8502:8501"
+      - "8081:80"
     volumes:
       - apex-logs:/app/logs
       - apex-data:/app/data

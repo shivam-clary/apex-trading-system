@@ -42,7 +42,7 @@ install:
 
 infra-up:
 	@echo "[APEX] Starting infrastructure services..."
-	$(DC) up -d timescaledb zookeeper kafka redis
+	$(DC) up -d zookeeper kafka redis
 	@echo "[APEX] Waiting for services to be healthy..."
 	@sleep 10
 	@$(MAKE) kafka-topics
@@ -102,7 +102,7 @@ live-trade:
 	@echo "    1. Backtesting passed with Sharpe > 1.5"
 	@echo "    2. Paper trading ran successfully for >= 30 days"
 	@echo "    3. Risk limits in .env are correctly configured"
-	@echo "    4. Zerodha Kite access token is fresh (< 24hrs)"
+	@echo "    4. Dhan access token is fresh"
 	@echo ""
 	@read -p "  Type CONFIRM to proceed: " confirm; \
 		[ "$$confirm" = "CONFIRM" ] || (echo "Aborted." && exit 1)

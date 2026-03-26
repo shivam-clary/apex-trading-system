@@ -3,11 +3,15 @@ MasterDecisionMakerAgent — final aggregation layer.
 Weighs all 20 agent signals, applies conflict penalty, kill-switch check,
 and risk validation to produce a single actionable ConsensusDecision.
 """
+
 from __future__ import annotations
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from ..core.signal_schema import (
-    ConsensusDecision, SignalDirection, SignalTimeframe, AssetClass
+    ConsensusDecision,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
 )
 from .signal_bus import InterAgentSignalBus
 from .conflict_detector import ConflictDetectionEngine
@@ -32,7 +36,7 @@ class MasterDecisionMakerAgent:
         conflict_engine: Optional[ConflictDetectionEngine] = None,
         risk_manager: Optional[RiskManagementAgent] = None,
         kill_switch: Optional[VolatilityKillSwitch] = None,
-        **kwargs
+        **kwargs,
     ):
         self.bus = signal_bus
         self.conflict = conflict_engine or kwargs.get("conflict_detector")
@@ -41,10 +45,14 @@ class MasterDecisionMakerAgent:
         self.learning_engine = kwargs.get("learning_engine")
         self.tradable_symbols = ["NIFTY BANK", "BSE BANKEX"]
         self._decision_history: list = []
-        self._reversal_counter: Dict[str, int] = {} # Tracks sustained reversals
-        self._persistence_threshold = 2 # Requires 2 consecutive checks (~30s) to be a "Real" reversal
+        self._reversal_counter: Dict[str, int] = {}  # Tracks sustained reversals
+        self._persistence_threshold = (
+            2  # Requires 2 consecutive checks (~30s) to be a "Real" reversal
+        )
 
-    async def monitor_open_positions(self, positions: Dict[str, Any], market_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def monitor_open_positions(
+        self, positions: Dict[str, Any], market_data: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """
         Scans open positions and flags those that are 'unsafe' due to consensus reversal.
         Implements PERSISTENCE CHECK to filter out 'Fake' signals/noise.
@@ -56,46 +64,62 @@ class MasterDecisionMakerAgent:
 
         # Calculate current consensus direction
         consensus = await self.decide(market_data)
-        
+
         for pos_id, pos in positions.items():
             symbol = pos.symbol
-            direction = pos.direction # LONG or SHORT
-            
+            direction = pos.direction  # LONG or SHORT
+
             # Detect potential reversal
             is_reversing = False
             reversal_reason = ""
 
             # Check for Reversal Logic
-            if direction == "LONG" and consensus.final_direction == SignalDirection.BEARISH:
+            if (
+                direction == "LONG"
+                and consensus.final_direction == SignalDirection.BEARISH
+            ):
                 if consensus.consensus_score > STRONG_THRESHOLD:
                     is_reversing = True
-                    reversal_reason = f"Strong Bearish Reversal ({consensus.consensus_score:.2f})"
-            elif direction == "SHORT" and consensus.final_direction == SignalDirection.BULLISH:
+                    reversal_reason = (
+                        f"Strong Bearish Reversal ({consensus.consensus_score:.2f})"
+                    )
+            elif (
+                direction == "SHORT"
+                and consensus.final_direction == SignalDirection.BULLISH
+            ):
                 if consensus.consensus_score > STRONG_THRESHOLD:
                     is_reversing = True
-                    reversal_reason = f"Strong Bullish Reversal ({consensus.consensus_score:.2f})"
+                    reversal_reason = (
+                        f"Strong Bullish Reversal ({consensus.consensus_score:.2f})"
+                    )
 
             # Persistence Check: Filter out Fakes/Noise
             if is_reversing:
-                self._reversal_counter[pos_id] = self._reversal_counter.get(pos_id, 0) + 1
+                self._reversal_counter[pos_id] = (
+                    self._reversal_counter.get(pos_id, 0) + 1
+                )
                 if self._reversal_counter[pos_id] >= self._persistence_threshold:
-                    exits.append({
-                        "symbol": symbol,
-                        "position_id": pos_id,
-                        "reason": f"UNSAFE: Sustained {reversal_reason}"
-                    })
+                    exits.append(
+                        {
+                            "symbol": symbol,
+                            "position_id": pos_id,
+                            "reason": f"UNSAFE: Sustained {reversal_reason}",
+                        }
+                    )
             else:
                 # Reset counter if the reversal disappears (it was a fake/noise)
                 self._reversal_counter[pos_id] = 0
-                    
+
             # VOLATILITY EXIT: If Kill Switch triggered (immediate, no persistence check)
             halted, halt_reason = self.kill_switch.check(market_data)
             if halted:
-                exits.append({
-                    "symbol": symbol, 
-                    "position_id": pos_id,
-                    "reason": f"KILL SWITCH: {halt_reason}"
-                })
+                exits.append(
+                    {
+                        "symbol": symbol,
+                        "position_id": pos_id,
+                        "reason": f"KILL SWITCH: {halt_reason}",
+                    }
+                )
 
         return exits
 
@@ -121,9 +145,17 @@ class MasterDecisionMakerAgent:
 
         for agent_name, signal in signals.items():
             weight = signal.signal_weight * signal.confidence
-            if signal.direction == SignalDirection.BULLISH:
+            if signal.direction in (
+                SignalDirection.BULLISH,
+                SignalDirection.BUY,
+                SignalDirection.STRONG_BUY,
+            ):
                 bull_score += weight
-            elif signal.direction == SignalDirection.BEARISH:
+            elif signal.direction in (
+                SignalDirection.BEARISH,
+                SignalDirection.SELL,
+                SignalDirection.STRONG_SELL,
+            ):
                 bear_score += weight
             total_weight += signal.signal_weight
             participating_agents.append(agent_name)
@@ -163,9 +195,13 @@ class MasterDecisionMakerAgent:
         # 6. Tradable Universe Filter (Banking Focus)
         if direction != SignalDirection.NEUTRAL:
             # Check if any signal symbol matches tradable list
-            valid_symbols = [s.symbol for s in signals.values() if s.symbol in self.tradable_symbols]
+            valid_symbols = [
+                s.symbol for s in signals.values() if s.symbol in self.tradable_symbols
+            ]
             if not valid_symbols:
-                return self._make_hold_decision(f"Filtered: Symbol not in Banking whitelist")
+                return self._make_hold_decision(
+                    f"Filtered: Symbol not in Banking whitelist"
+                )
             consensus_symbol = valid_symbols[0]
         else:
             consensus_symbol = "NIFTY BANK"
@@ -178,36 +214,67 @@ class MasterDecisionMakerAgent:
             asset_class=AssetClass.INDEX,
             reasoning=reasoning,
             total_agents=len(signals),
-            bullish_agents=len([s for s in signals.values()
-                               if s.direction == SignalDirection.BULLISH]),
-            bearish_agents=len([s for s in signals.values()
-                               if s.direction == SignalDirection.BEARISH]),
-            neutral_agents=len([s for s in signals.values()
-                               if s.direction == SignalDirection.NEUTRAL]),
+            bullish_agents=len(
+                [
+                    s
+                    for s in signals.values()
+                    if s.direction
+                    in (
+                        SignalDirection.BULLISH,
+                        SignalDirection.BUY,
+                        SignalDirection.STRONG_BUY,
+                    )
+                ]
+            ),
+            bearish_agents=len(
+                [
+                    s
+                    for s in signals.values()
+                    if s.direction
+                    in (
+                        SignalDirection.BEARISH,
+                        SignalDirection.SELL,
+                        SignalDirection.STRONG_SELL,
+                    )
+                ]
+            ),
+            neutral_agents=len(
+                [
+                    s
+                    for s in signals.values()
+                    if s.direction
+                    in (SignalDirection.NEUTRAL, SignalDirection.NO_SIGNAL)
+                ]
+            ),
             bull_score=norm_bull,
             bear_score=norm_bear,
             conflict_analysis=conflict_analysis,
         )
 
-        self._decision_history.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "direction": direction.value,
-            "confidence": confidence,
-        })
+        self._decision_history.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "direction": direction.value,
+                "confidence": confidence,
+            }
+        )
 
         # 6. DTE Check for Options
         if decision.asset_class == AssetClass.OPTIONS:
             min_dte = 7
             if self.learning_engine and self.learning_engine.redis:
                 from ..core.apex_redis import read_state
+
                 val = read_state("APEX:MIN_DTE_NEW_ENTRIES")
                 if val:
                     min_dte = int(val)
-            
+
             # Simulated DTE check (in real life would pull from feed)
-            current_dte = market_data.get("dte", 30) 
+            current_dte = market_data.get("dte", 30)
             if current_dte < min_dte:
-                return self._make_hold_decision(f"Filtered: DTE {current_dte} < MIN_DTE {min_dte}")
+                return self._make_hold_decision(
+                    f"Filtered: DTE {current_dte} < MIN_DTE {min_dte}"
+                )
 
         return decision
 

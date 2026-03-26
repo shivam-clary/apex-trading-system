@@ -2,10 +2,17 @@
 GlobalNews Agent — monitors US Fed minutes, ECB policy, geopolitical events,
 and global macro news headlines for overnight risk-on/risk-off bias.
 """
+
 from __future__ import annotations
+import json
 from typing import Any, Dict, List
 from ..core.base_agent import APEXBaseAgent
-from ..core.signal_schema import AgentSignal, SignalDirection, SignalTimeframe, AssetClass
+from ..core.signal_schema import (
+    AgentSignal,
+    SignalDirection,
+    SignalTimeframe,
+    AssetClass,
+)
 
 
 class GlobalNewsAgent(APEXBaseAgent):
@@ -19,16 +26,36 @@ class GlobalNewsAgent(APEXBaseAgent):
     SIGNAL_WEIGHT = 0.06
 
     RISK_OFF_KEYWORDS = [
-        "war escalation", "nuclear", "sanctions", "trade war", "tariff",
-        "bank failure", "credit crisis", "recession", "default sovereign",
-        "fed hike surprise", "inflation surge", "stagflation",
-        "pandemic", "lockdown", "supply shock",
+        "war escalation",
+        "nuclear",
+        "sanctions",
+        "trade war",
+        "tariff",
+        "bank failure",
+        "credit crisis",
+        "recession",
+        "default sovereign",
+        "fed hike surprise",
+        "inflation surge",
+        "stagflation",
+        "pandemic",
+        "lockdown",
+        "supply shock",
     ]
 
     RISK_ON_KEYWORDS = [
-        "ceasefire", "peace deal", "fed pause", "rate cut", "stimulus",
-        "trade deal", "china reopening", "soft landing", "strong jobs",
-        "earnings beat", "gdp beat", "manufacturing expansion",
+        "ceasefire",
+        "peace deal",
+        "fed pause",
+        "rate cut",
+        "stimulus",
+        "trade deal",
+        "china reopening",
+        "soft landing",
+        "strong jobs",
+        "earnings beat",
+        "gdp beat",
+        "manufacturing expansion",
     ]
 
     async def analyze(self, market_data: Dict[str, Any]) -> AgentSignal:
@@ -48,24 +75,25 @@ class GlobalNewsAgent(APEXBaseAgent):
             "headlines": [h.get("title") for h in global_headlines[:5]],
             "geopolitical_risk": geopolitical_risk,
             "vix": vix_level,
-            "fast_score": total_score
+            "fast_score": total_score,
         }
-        
+
         from ..core.llm import get_llm
+
         llm = get_llm(self.config)
         ai_analysis = await llm.analyze_with_memory(
-            self.AGENT_NAME, 
-            json.dumps(context), 
-            mem_str
+            self.AGENT_NAME, json.dumps(context), mem_str
         )
 
         direction_val = ai_analysis.get("direction", "NEUTRAL")
         direction = (
-            SignalDirection.BULLISH if direction_val == "BULLISH"
-            else SignalDirection.BEARISH if direction_val == "BEARISH"
+            SignalDirection.BULLISH
+            if direction_val == "BULLISH"
+            else SignalDirection.BEARISH
+            if direction_val == "BEARISH"
             else SignalDirection.NEUTRAL
         )
-        
+
         confidence = ai_analysis.get("confidence", abs(total_score) / 40)
 
         return AgentSignal(
@@ -78,21 +106,14 @@ class GlobalNewsAgent(APEXBaseAgent):
             metadata={
                 "fast_score": total_score,
                 "ai_factors": ai_analysis.get("key_factors", []),
-                "memory_utilised": "No prior experience" not in mem_str
+                "memory_utilised": "No prior experience" not in mem_str,
             },
         )
 
     def _score_headlines(self, headlines: List[Dict]) -> float:
         score = 0.0
         for item in headlines:
-            text = (
-                item.get(
-                    "title",
-                    "") +
-                " " +
-                item.get(
-                    "summary",
-                    "")).lower()
+            text = (item.get("title", "") + " " + item.get("summary", "")).lower()
             for kw in self.RISK_OFF_KEYWORDS:
                 if kw in text:
                     score -= 12

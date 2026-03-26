@@ -3,6 +3,7 @@ APEX Trading Intelligence System — Base Agent
 All 20 agents inherit from APEXBaseAgent.
 Provides: signal publishing, Redis pub/sub, structured logging, health checks.
 """
+
 from __future__ import annotations
 import asyncio
 import logging
@@ -15,10 +16,7 @@ from typing import Optional, Dict, Any, List, Union
 from .signal_schema import AgentSignal, SignalDirection, SignalTimeframe, AssetClass
 from .config import APEXConfig
 from .memory import ExperienceMemory
-from .constants import (
-    KAFKA_SIGNAL_TOPIC, REDIS_SIGNAL_PREFIX,
-    WEAK_SIGNAL_THRESHOLD
-)
+from .constants import KAFKA_SIGNAL_TOPIC, REDIS_SIGNAL_PREFIX, WEAK_SIGNAL_THRESHOLD
 
 # IST timezone constant — used everywhere in this module
 IST = ZoneInfo("Asia/Kolkata")
@@ -41,7 +39,7 @@ class APEXBaseAgent(ABC):
         agent_name: Optional[str] = None,
         version: str = "1.0.0",
         config: Optional[APEXConfig] = None,
-        **kwargs
+        **kwargs,
     ):
         self.agent_name = agent_name or self.__class__.__name__
         self.version = version
@@ -57,8 +55,9 @@ class APEXBaseAgent(ABC):
         self._is_healthy: bool = True
         self._start_time = time.time()
 
-        # Connections (lazy init)
-        self._redis = None
+        # Connections (lazy init — preserve redis_client if passed via kwargs)
+        if self._redis is None:
+            self._redis = None
         self._memory = ExperienceMemory(self.agent_name)
         self._kafka_producer = None
         self._db_pool = None
@@ -74,11 +73,7 @@ class APEXBaseAgent(ABC):
         handler.setFormatter(formatter)
         if not self.logger.handlers:
             self.logger.addHandler(handler)
-        self.logger.setLevel(
-            getattr(
-                logging,
-                self.config.LOG_LEVEL,
-                logging.INFO))
+        self.logger.setLevel(getattr(logging, self.config.LOG_LEVEL, logging.INFO))
 
     # ── Abstract Interface ──────────────────────────────────────────────────
 
@@ -126,7 +121,7 @@ class APEXBaseAgent(ABC):
             market_data = akwargs.get("market_data")
             if market_data is None:
                 market_data = await self._fetch_data()
-            
+
             signal = await self.analyze(market_data=market_data)
             signal = self._validate_signal(signal)
             await self._publish_signal(signal)
@@ -151,27 +146,52 @@ class APEXBaseAgent(ABC):
         - MCX / Commodities (15:30 - 23:45)
         """
         from datetime import time as dt_time
+
         now = datetime.now(IST)
         current_time = now.time()
-        
+
         # Actionable window for Intelligence
         window_start = dt_time(8, 0)
         window_end = dt_time(23, 45)
-        
+
         if now.weekday() >= 5:  # Sat/Sun
             # Some global/crypto agents might want to run, but for now we follow business days
             return False
-            
+
         return window_start <= current_time <= window_end
 
     def _no_signal(self, reason: str = "") -> AgentSignal:
         """Return a no opinion signal."""
         return AgentSignal(
-            timestamp=datetime.now(IST).isoformat(),  # fix: IST-aware, was naive datetime.now()
+            timestamp=datetime.now(IST).isoformat(),
             agent_name=self.agent_name,
             direction=SignalDirection.NO_SIGNAL,
             confidence=0.0,
-            reason=reason,
+            reasoning=reason,
+        )
+
+    def _make_signal(
+        self,
+        direction: SignalDirection,
+        confidence: float,
+        reasoning: str = "",
+        symbol: str = "",
+        timeframe: SignalTimeframe = SignalTimeframe.INTRADAY,
+        asset_class: AssetClass = AssetClass.EQUITY,
+        **kwargs,
+    ) -> AgentSignal:
+        """Helper to build a well-formed AgentSignal from analysis results."""
+        return AgentSignal(
+            timestamp=datetime.now(IST).isoformat(),
+            agent_name=self.agent_name,
+            agent_version=self.version,
+            direction=direction,
+            confidence=max(0.0, min(1.0, confidence)),
+            reasoning=reasoning,
+            symbol=symbol,
+            timeframe=timeframe,
+            asset_class=asset_class,
+            **kwargs,
         )
 
     async def get_long_term_memory(self, market_data: Dict[str, Any]) -> str:
@@ -209,10 +229,7 @@ class APEXBaseAgent(ABC):
     async def _publish_to_kafka(self, signal: AgentSignal):
         """Publish signal to Kafka topic."""
         if self._kafka_producer:
-            self._kafka_producer.send(
-                KAFKA_SIGNAL_TOPIC,
-                value=signal.dict()
-            )
+            self._kafka_producer.send(KAFKA_SIGNAL_TOPIC, value=signal.dict())
 
     # ── Health & Status ────────────────────────────────────────────────
 
@@ -224,9 +241,11 @@ class APEXBaseAgent(ABC):
             "healthy": self._is_healthy,
             "run_count": self._run_count,
             "error_count": self._error_count,
-            "uptime_secs(": time.time() - self._start_time,
+            "uptime_secs": time.time() - self._start_time,
             "last_run_ts": self._last_run_ts,
-            "timestamp": datetime.now(IST).isoformat(),  # fix: IST-aware, was naive datetime.now()
+            "timestamp": datetime.now(
+                IST
+            ).isoformat(),  # fix: IST-aware, was naive datetime.now()
         }
 
     def is_healthy(self) -> bool:

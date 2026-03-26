@@ -2,10 +2,12 @@
 PortfolioManagementAgent — tracks open positions, calculates portfolio Greeks,
 manages hedging requirements, and enforces sector/instrument concentration limits.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
+import json
 import uuid
 
 
@@ -13,25 +15,22 @@ import uuid
 class Position:
     position_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     symbol: str = ""
-    instrument_type: str = "EQ"   # EQ, FUT, CE, PE
-    direction: str = "LONG"       # LONG or SHORT
+    instrument_type: str = "EQ"  # EQ, FUT, CE, PE
+    direction: str = "LONG"  # LONG or SHORT
     entry_price: float = 0.0
     current_price: float = 0.0
     quantity: int = 0
     lot_size: int = 1
     stop_loss: float = 0.0
     target: float = 0.0
-    entry_time: datetime = field(
-        default_factory=lambda: datetime.now(
-            timezone.utc))
+    entry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     sector: str = "unknown"
     correlation_to_nifty: float = 0.8
 
     @property
     def unrealised_pnl(self) -> float:
         multiplier = 1 if self.direction == "LONG" else -1
-        return multiplier * (self.current_price -
-                             self.entry_price) * self.quantity
+        return multiplier * (self.current_price - self.entry_price) * self.quantity
 
     @property
     def pnl_pct(self) -> float:
@@ -64,6 +63,7 @@ class PortfolioManagementAgent:
         if not self.redis:
             return
         from ..core.apex_redis import read_state
+
         mode_data = read_state("CONFIG:TRADING_MODE")
         if mode_data:
             try:
@@ -88,8 +88,7 @@ class PortfolioManagementAgent:
         self.positions[pos.position_id] = pos
         return True, pos.position_id
 
-    def close_position(self, position_id: str,
-                       exit_price: float) -> Optional[Dict]:
+    def close_position(self, position_id: str, exit_price: float) -> Optional[Dict]:
         pos = self.positions.pop(position_id, None)
         if not pos:
             return None
@@ -106,7 +105,8 @@ class PortfolioManagementAgent:
             "quantity": pos.quantity,
             "pnl": pnl,
             "pnl_pct": pos.pnl_pct,
-            "duration_mins": (datetime.now(timezone.utc) - pos.entry_time).seconds // 60,
+            "duration_mins": (datetime.now(timezone.utc) - pos.entry_time).seconds
+            // 60,
             "closed_at": datetime.now(timezone.utc).isoformat(),
         }
         self.closed_trades.append(trade_record)
@@ -118,8 +118,7 @@ class PortfolioManagementAgent:
                 pos.current_price = price_updates[pos.symbol]
 
     def get_portfolio_summary(self) -> Dict:
-        total_unrealised = sum(
-            p.unrealised_pnl for p in self.positions.values())
+        total_unrealised = sum(p.unrealised_pnl for p in self.positions.values())
         total_notional = sum(p.notional_value for p in self.positions.values())
         return {
             "capital": self.capital,
@@ -130,26 +129,28 @@ class PortfolioManagementAgent:
             "total_pnl": self.realised_pnl + total_unrealised,
             "positions": [
                 {
-                    "id": p.position_id, "symbol": p.symbol,
-                    "direction": p.direction, "qty": p.quantity,
-                    "entry": p.entry_price, "current": p.current_price,
-                    "unrealised_pnl": p.unrealised_pnl, "pnl_pct": p.pnl_pct,
+                    "id": p.position_id,
+                    "symbol": p.symbol,
+                    "direction": p.direction,
+                    "qty": p.quantity,
+                    "entry": p.entry_price,
+                    "current": p.current_price,
+                    "unrealised_pnl": p.unrealised_pnl,
+                    "pnl_pct": p.pnl_pct,
                 }
                 for p in self.positions.values()
             ],
         }
 
-    def _check_sector_concentration(
-            self, new_pos: Position) -> Tuple[bool, str]:
+    def _check_sector_concentration(self, new_pos: Position) -> Tuple[bool, str]:
         sector_notional = sum(
-            p.notional_value for p in self.positions.values()
+            p.notional_value
+            for p in self.positions.values()
             if p.sector == new_pos.sector
         )
-        total = sum(
-            p.notional_value for p in self.positions.values()) or self.capital
+        total = sum(p.notional_value for p in self.positions.values()) or self.capital
         new_notional = new_pos.current_price * new_pos.quantity
-        if (sector_notional + new_notional) / \
-                total > self.MAX_SECTOR_CONCENTRATION:
+        if (sector_notional + new_notional) / total > self.MAX_SECTOR_CONCENTRATION:
             return False, f"Sector concentration limit reached for {new_pos.sector}"
         return True, ""
 
